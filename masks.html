@@ -31,6 +31,7 @@ body{display:flex;flex-direction:column;align-items:center;justify-content:cente
 'use strict';
 var ORDRE=Object.keys(MASKS),n=0,mode=0,pre=document.getElementById('p');
 try{n=+(sessionStorage.getItem('klone:mask')||0)%ORDRE.length;mode=+(localStorage.getItem('klone:maskmode')||0);}catch(e){}
+var hh=location.hash.slice(1).split(',');if(ORDRE.indexOf(hh[0])>=0)n=ORDRE.indexOf(hh[0]);if(hh[1]==='phosphore')mode=1;
 function rgb(h){return [parseInt(h.substr(1,2),16),parseInt(h.substr(3,2),16),parseInt(h.substr(5,2),16)];}
 /* Phosphore : six intensités d'ambre, la palette fermée de la borne */
 var AMB=['#0b0908','#3a2208','#6e4210','#b06a18','#ffa726','#ffe3a0'];

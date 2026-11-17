@@ -16,3 +16,5 @@ Site : https://mauktenieb.github.io/klone/
 ## Lettres
 
 Unscii 8 (domaine public, viznut) pour toute image ; VT323 et Press Start 2P pour les plaques et les commandes.
+- `motel.html` : la chambre du Motel Korhogo, une scène 3D rendue en pixels puis en texte, de face, à hauteur d'yeux. Les deux appliques et la télé éclairent l'enduit, la moquette, la couverture tissée. La caméra suit le pointeur ou l'inclinaison du téléphone. La télé change de chaîne au toucher, le portrait mène aux Masks, la porte ramène à la borne.
+- `motel-iso.html` : la même chambre, vue en maison de poupée isométrique.
