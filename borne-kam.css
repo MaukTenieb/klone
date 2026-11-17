@@ -1,0 +1,208 @@
+/* KamOrhogo, lot 2 « matière » (16 nov. 2026) : le caméscope prend les images de Mauk Tenieb.
+   Couvre-lit du motel en fond, cadre d'écran dépliable, flanc noir granité, touches en caoutchouc,
+   interrupteurs à glissière, objectif et cache, molette des prises, bouton REC, cassette Hi8 à la sauvegarde.
+   Images : kave/a/kam/. Comportement : borne-kam.js. */
+@font-face{font-family:"Permanent Marker";font-style:normal;font-display:swap;font-weight:400;src:url(font-permanent-marker-latin-400-normal.woff2) format("woff2")}
+
+/* fond : le couvre-lit du motel, assombri comme une chambre la nuit */
+/* 16 nov. 2026, 5 h 11 (Mauk Tenieb : « une couverture de lit Midjourney ») : le couvre-lit se voit en entier, motif et couleurs ; une ombre légère sur les bords seulement */
+html body,html body .app{background:radial-gradient(ellipse 80% 75% at 50% 45%,rgba(0,0,0,0) 55%,rgba(8,4,1,.42)),url(kave/a/kam/bed.webp) 0 0/512px #3a2208!important}
+
+/* écran : l'écran commun garde sa taille et sa place ; le cadre du moniteur dépliable l'entoure par-dessus la marge */
+html body .ike-frame{background:none!important;box-shadow:none!important;border-width:0!important;border-style:solid!important;border-color:transparent!important;
+  border-image:url(kave/a/kam/lcd.webp) 64 128 71 84 / 13px 15px 14px 15px / 9px 11px 10px 11px stretch!important;
+  filter:drop-shadow(0 10px 18px rgba(0,0,0,.75))}
+
+/* flanc du caméscope : plastique noir granité, liseré argent en tête, vis et grip en pied */
+html body #ctrl{background:none!important;border-width:0!important;border-style:solid!important;border-color:transparent!important;
+  border-image:url(kave/a/kam/panel.webp) 40 50 120 50 fill / 10px 12px 30px 12px stretch!important;
+  box-shadow:0 14px 30px rgba(0,0,0,.7);padding-bottom:30px;background-color:#0c0c0d!important;border-radius:6px}
+html body header.top{background:none!important;box-shadow:none!important;border:0!important;color:#d9d3c6}
+
+/* touches en caoutchouc : l'image de la touche, le pictogramme sérigraphié par-dessus */
+html body :is(.key,.chip,.gchip,.fam,.dock button,.pvMode button):not(.kam-rec,.kam-dial){
+  background:none!important;border-width:0!important;border-style:solid!important;border-color:transparent!important;box-shadow:none!important;
+  border-image:url(kave/a/kam/btn.webp) 66 76 66 76 fill / 11px 12px 11px 12px stretch!important;
+  color:#d6d0c3!important;text-shadow:none;transition:filter .12s,transform .08s}
+html body :is(.key,.chip,.gchip,.fam,.dock button):hover{filter:brightness(1.18);color:#fff!important}
+html body :is(.key,.chip,.gchip,.fam,.dock button,.pvMode button):active{transform:translateY(1px);filter:brightness(.72)}
+html body :is(.key,.chip,.gchip,.fam,.dock button)[aria-pressed=true],html body .dock button[aria-selected=true]{
+  filter:brightness(.8);color:#ffb84d!important}
+html body :is(.key,.chip,.gchip,.fam,.dock button)[aria-pressed=true] .ic,html body .dock button[aria-selected=true] .ic{
+  filter:drop-shadow(0 0 3px rgba(255,170,60,.75))}
+html body .dock{background:none!important;border:0!important;gap:8px;padding:10px 12px 6px!important}
+html body .dock button::after{display:none!important}
+html body .key.prim{color:#d6d0c3!important}
+
+/* interrupteurs à glissière : la fente et le curseur strié ; les deux pictogrammes au-dessus, de part et d'autre */
+html body #kb .sw{background:none!important;box-shadow:none!important;padding:0!important;margin-top:4px;min-width:104px;height:58px;border-radius:0}
+html body #kb .sw::after{content:"";position:absolute;left:0;right:0;bottom:0;height:28px;z-index:0;pointer-events:none;
+  border-width:0;border-style:solid;border-color:transparent;border-image:url(kave/a/kam/sw-slot.webp) 24 46 24 46 fill / 8px 13px stretch}
+html body #kb .sw::before{top:auto!important;bottom:5px!important;left:9px!important;width:calc(50% - 9px)!important;height:18px!important;z-index:1;
+  border-radius:3px!important;background:url(kave/a/kam/sw-knob.webp) center/100% 100% no-repeat!important;box-shadow:0 2px 3px rgba(0,0,0,.75)!important}
+html body #kb .sw button{z-index:2;height:58px!important;align-content:start;padding-top:2px!important;color:#8f897d!important}
+html body #kb .sw button .ic{width:20px;height:20px}
+html body #kb .sw button[aria-pressed=true]{color:#ffb84d!important}
+html body #kb .sw button[aria-pressed=true]::after{top:auto!important;bottom:34px!important;width:5px!important;height:5px!important;margin-left:-2.5px!important;display:none}
+/* une seule position (capture d'écran absente au téléphone) : une touche simple */
+html body #kb .sw:has(button[hidden])::before,html body #kb .sw:has(button[hidden])::after{display:none}
+html body #kb .sw:has(button[hidden]){min-width:0;height:auto}
+html body #kb .sw:has(button[hidden]) button:not([hidden]){height:48px!important;width:52px;align-content:center;padding:0!important;
+  border-width:0;border-style:solid;border-color:transparent;border-image:url(kave/a/kam/btn.webp) 66 76 66 76 fill / 11px 12px 11px 12px stretch}
+
+/* objectif ou cache : un appui pose le cache, un autre l'ôte */
+html body #kb #kObj{min-width:58px!important;width:58px;height:58px;justify-self:center;border-radius:50%;filter:drop-shadow(0 3px 4px rgba(0,0,0,.7))}
+html body #kb #kObj::after{inset:0;height:auto;border-image:none;background:url(kave/a/kam/lens.webp) center/contain no-repeat;border-radius:50%}
+html body #kb #kObj::before{inset:-3px!important;width:auto!important;height:auto!important;border-radius:50%!important;box-shadow:none!important;
+  background:url(kave/a/kam/cap.webp) center/contain no-repeat!important;opacity:0;transform:translate(-40%,-55%) rotate(-50deg) scale(.9)!important;
+  transition:transform .32s cubic-bezier(.3,1.3,.5,1),opacity .2s}
+html body #kb #kObj:has([data-o=mask][aria-pressed=true])::before{opacity:1;transform:none!important}
+html body #kb #kObj button{position:absolute!important;inset:0;width:100%!important;height:100%!important;padding:0!important;border-radius:50%}
+html body #kb #kObj button .ic{display:none}
+html body #kb #kObj button[aria-pressed=true]{pointer-events:none}
+html body #kb #kObj button[aria-pressed=true]::after{display:none}
+
+/* molette des prises (une, superposer, pellicule) : trois crans, pictogrammes autour */
+html body .pvMode.ff-modes{position:relative;display:block!important;width:150px;height:100px;flex:none;background:none!important;box-shadow:none!important;border:0!important;padding:0!important}
+html body .pvMode.ff-modes button:not(.kam-dial){position:absolute;width:44px!important;height:44px!important;min-height:0!important;padding:0!important;display:grid;place-items:center;
+  border-image:none!important;background:none!important;color:#8f897d!important}
+html body .pvMode.ff-modes button:not(.kam-dial)[aria-pressed=true]{color:#ffb84d!important;filter:drop-shadow(0 0 3px rgba(255,170,60,.7))}
+html body .pvMode.ff-modes button:nth-of-type(1){left:0;top:46px}
+html body .pvMode.ff-modes button:nth-of-type(2){left:53px;top:0}
+html body .pvMode.ff-modes button:nth-of-type(3){right:0;top:46px}
+html body .pvMode .kam-dial{position:absolute;left:47px;top:38px;width:56px;height:56px;padding:0;border:0;border-radius:50%;cursor:pointer;
+  background:url(kave/a/kam/dial.webp) center/contain no-repeat;filter:drop-shadow(0 3px 4px rgba(0,0,0,.8));
+  transition:transform .28s cubic-bezier(.3,1.5,.5,1)}
+.kam-dial[data-c="0"]{transform:rotate(-90deg)}.kam-dial[data-c="2"]{transform:rotate(90deg)}
+
+/* bouton REC : le déclencheur, à côté de la molette ; rouge vif pendant l'enregistrement */
+html body #ctrl #shutterRow:not([hidden]){display:flex!important;align-items:center!important;flex-wrap:nowrap!important;justify-content:center!important;gap:22px!important}
+html body #ctrl #shutterRow .ff-flip{flex:none!important;width:52px!important;height:48px}
+.kam-rec{flex:none;width:64px;height:64px;padding:0;border:0;border-radius:50%;cursor:pointer;background:url(kave/a/kam/rec.webp) center/contain no-repeat;
+  filter:drop-shadow(0 3px 4px rgba(0,0,0,.8));transition:transform .08s,filter .15s}
+.kam-rec:active{transform:scale(.94);filter:brightness(.8) drop-shadow(0 1px 2px rgba(0,0,0,.8))}
+.kam-rec.on{animation:kamrec 1s steps(2) infinite}
+/* mode son : la rangée se réduit au seul REC */
+html.kam-son body #ctrl #shutterRow{display:flex!important;justify-content:center!important}
+html.kam-son body #ctrl #shutterRow>:not(.kam-rec){display:none!important}
+@keyframes kamrec{50%{filter:brightness(1.6) drop-shadow(0 0 10px rgba(255,40,20,.9))}}
+
+/* le compartiment des rendus : l'intérieur de la trappe latérale, gris foncé, en creux */
+html body #inspector{margin:4px 10px 0;border-radius:6px;background:linear-gradient(rgba(58,58,62,.6),rgba(26,26,29,.8)),url(kave/a/kam/tex.webp) 0 0/192px!important;
+  box-shadow:inset 0 3px 9px rgba(0,0,0,.85),inset 0 0 0 1px #000!important}
+html body #q{background:#0d0d0f url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='10' cy='10' r='6' fill='none' stroke='%238f897d' stroke-width='2'/%3E%3Cpath d='m15 15 5.5 5.5' stroke='%238f897d' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E") 12px center/20px no-repeat!important;
+  padding-left:42px!important;border:0!important;box-shadow:inset 0 2px 4px rgba(0,0,0,.9)!important;color:#e9e3d6}
+
+/* sauvegarde : une cassette Hi8 sort du bas de l'écran, le nom du fichier écrit sur l'étiquette */
+.kam-hi8{position:absolute;left:50%;bottom:0;z-index:9;width:min(46%,210px);aspect-ratio:420/292;pointer-events:none;
+  background:url(kave/a/kam/hi8.webp) center/contain no-repeat;filter:drop-shadow(0 8px 10px rgba(0,0,0,.7));
+  transform:translate(-50%,110%) rotate(-3deg);animation:kamhi8 2.6s cubic-bezier(.25,.9,.3,1) forwards}
+.kam-hi8 b{position:absolute;left:20%;right:20%;top:20%;height:15%;overflow:hidden;white-space:nowrap;
+  font:400 clamp(11px,2vw,15px)/1.4 'Permanent Marker','Comic Sans MS',cursive;color:#1d1a6e}
+.kam-hi8 b i{display:inline-block;font-style:normal;padding-left:100%;animation:kamtp 4s linear .4s infinite}
+@keyframes kamhi8{0%{transform:translate(-50%,110%) rotate(-3deg)}22%,72%{transform:translate(-50%,-12%) rotate(-3deg)}100%{transform:translate(-50%,130%) rotate(4deg)}}
+@keyframes kamtp{to{transform:translateX(-100%)}}
+@media (prefers-reduced-motion:reduce){.kam-hi8{animation-duration:.01s}.kam-rec.on{animation:none;filter:brightness(1.5)}}
+
+/* téléphone : molette et REC tiennent sur une rangée, la touche ⇄ à droite */
+@media (max-width:520px){
+  html body .shutterRow{justify-content:space-between!important;padding-inline:10px}
+  html body #kb .sw{min-width:0}
+}
+
+/* dictaphone : pictogrammes des effets et des commandes (le nom reste lu par les lecteurs d'écran) */
+html body #sonPanel .sonFx button,html body #sonPanel .sonRow>button{font-size:0!important;letter-spacing:0;position:relative;min-width:48px;min-height:46px;padding:0!important}
+html body #sonPanel .sonFx button::before,html body #sonPanel .sonRow>button::before{content:"";position:absolute;inset:0;margin:auto;width:22px;height:22px;background:currentColor;-webkit-mask:var(--pk) center/contain no-repeat;mask:var(--pk) center/contain no-repeat}
+html body #sonPanel .sonFx button[data-fx=""]{--pk:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 12h18'/%3E%3C/svg%3E")}
+html body #sonPanel .sonFx button[data-fx="cave"]{--pk:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 20v-9a8 8 0 0 1 16 0v9M2 20h20'/%3E%3C/svg%3E")}
+html body #sonPanel .sonFx button[data-fx="low"]{--pk:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 12c2.5-7 5-7 7.5 0s5 7 7.5 0 3-5 5-3'/%3E%3C/svg%3E")}
+html body #sonPanel .sonFx button[data-fx="high"]{--pk:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 12l1.6-5 1.6 10 1.6-10 1.6 10 1.6-10 1.6 10 1.6-10 1.6 10 1.6-10 1.6 10 1.6-10 1.6 5'/%3E%3C/svg%3E")}
+html body #sonPanel .sonFx button[data-fx="radio"]{--pk:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 21v-9M8 8a5.6 5.6 0 0 0 0 8M16 8a5.6 5.6 0 0 1 0 8M5 5a10 10 0 0 0 0 14M19 5a10 10 0 0 1 0 14'/%3E%3Ccircle cx='12' cy='12' r='1.4'/%3E%3C/svg%3E")}
+html body #sonPanel .sonFx button[data-fx="ghost"]{--pk:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 21V10a6 6 0 0 1 12 0v11l-2-2-2 2-2-2-2 2-2-2z'/%3E%3Ccircle cx='10' cy='10' r='.9'/%3E%3Ccircle cx='14' cy='10' r='.9'/%3E%3C/svg%3E")}
+html body #sonPanel .sonFx button[data-fx="fuzz"]{--pk:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 16h3V8h3v8h3V8h3v8h3V8h3v8h2'/%3E%3C/svg%3E")}
+html body #sonPanel .sonFx button[data-fx="bit"]{--pk:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 20h4v-4h4v-4h4V8h4V4h2'/%3E%3C/svg%3E")}
+html body #sonPanel .sonFx button[data-fx="stut"]{--pk:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 6v12M8.5 6v12M15.5 6v12M19 6v12'/%3E%3C/svg%3E")}
+html body #sonPanel .sonFx button[data-fx="echo"]{--pk:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='5' cy='12' r='1.6'/%3E%3Cpath d='M9 8.5a5 5 0 0 1 0 7M13 6a8.5 8.5 0 0 1 0 12M17 3.5a12 12 0 0 1 0 17'/%3E%3C/svg%3E")}
+html body #sonPanel .sonFx button[data-fx="phone"]{--pk:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 3h3l2 5-2.5 1.5a11 11 0 0 0 6 6L16 13l5 2v3a2 2 0 0 1-2 2A16 16 0 0 1 4 5a2 2 0 0 1 2-2z'/%3E%3C/svg%3E")}
+html body #sonPanel .sonFx button[data-fx="trem"]{--pk:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 12c1-2 2-2 3 0s2 2 3 0M8 12c1-5 2-5 3 0s2 5 3 0M14 12c1-2 2-2 3 0s2 2 3 0 1.5-1 2 0'/%3E%3C/svg%3E")}
+html body #sonPanel .sonFx button[data-fx="chorus"]{--pk:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 10c3-5 6 5 10 0s7 5 10 0M2 15c3-5 6 5 10 0s7 5 10 0'/%3E%3C/svg%3E")}
+html body #sonPanel .sonFx button[data-fx="robot"]{--pk:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='5' y='8' width='14' height='11' rx='1.5'/%3E%3Cpath d='M12 8V4M9 13h.01M15 13h.01M9 16.5h6'/%3E%3Ccircle cx='12' cy='3.5' r='1'/%3E%3C/svg%3E")}
+html body #sonPanel #sonD{--pk:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 12h15M14 6l6 6-6 6'/%3E%3C/svg%3E")}
+html body #sonPanel #sonPlay{--pk:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 5v14l12-7z' fill='%23000'/%3E%3C/svg%3E")}
+html body #sonPanel #sonSave{--pk:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3v12M6.5 9.5 12 15l5.5-5.5M4 20h16'/%3E%3C/svg%3E")}
+html body #sonPanel #sonX{--pk:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 6 12 12M18 6 6 18'/%3E%3C/svg%3E")}
+.kam-knob[data-k=pitch]::before{--pk:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 18V5l9-2v13'/%3E%3Ccircle cx='6.5' cy='18' r='2.5'/%3E%3Ccircle cx='15.5' cy='16' r='2.5'/%3E%3C/svg%3E")}
+.kam-knob[data-k=speed]::before{--pk:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6l6 6-6 6M12 6l6 6-6 6'/%3E%3C/svg%3E")}
+
+/* boutons rotatifs (hauteur, vitesse, réglages des rendus) : la bague graduée reste, la jupe striée tourne */
+.kam-knob{position:relative;flex:none;width:58px;height:58px;touch-action:none;cursor:grab;border-radius:50%;outline-offset:3px;
+  background:url(kave/a/kam/knob-ring.webp) center/contain no-repeat;filter:drop-shadow(0 3px 3px rgba(0,0,0,.75))}
+.kam-knob:active{cursor:grabbing}
+.kam-knob>i{position:absolute;inset:0;background:url(kave/a/kam/knob-cap.webp) center/contain no-repeat;transform:rotate(var(--a,0deg));transition:transform .06s linear}
+.kam-knob[data-k]::before{content:"";position:absolute;left:50%;top:-22px;width:18px;height:18px;margin-left:-9px;background:#8f897d;-webkit-mask:var(--pk) center/contain no-repeat;mask:var(--pk) center/contain no-repeat}
+.kam-knob>b{position:absolute;left:50%;bottom:-19px;transform:translateX(-50%);font:500 11px/1 var(--num,'DM Mono',monospace);letter-spacing:.06em;color:#ffb84d;text-shadow:0 0 4px rgba(255,160,50,.6);white-space:nowrap}
+.kam-hid{position:absolute!important;width:1px!important;height:1px!important;opacity:0!important;pointer-events:none!important;overflow:hidden}
+
+/* panneau du dictaphone : la trappe ouverte du flanc, ondes sur un écran à cristaux, commandes en caoutchouc */
+html body #sonPanel{background:linear-gradient(rgba(58,58,62,.55),rgba(22,22,25,.85)),url(kave/a/kam/tex.webp) 0 0/192px #1b1b1e!important;
+  border:0 solid transparent!important;border-radius:8px!important;box-shadow:0 14px 40px rgba(0,0,0,.85),inset 0 0 0 1px #000,inset 0 2px 0 rgba(255,255,255,.06)!important;padding:14px 14px 16px!important}
+html body #sonPanel #sonW{background:#0a0d08!important;box-shadow:inset 0 2px 6px #000,0 0 0 3px #111,0 0 0 4px #333;border-radius:3px}
+html body #sonPanel .sonRow:has(.sonK){justify-content:center;gap:56px;padding:26px 0 22px}
+html body #sonPanel .sonK{flex:none;min-width:0;align-items:center}
+html body #sonPanel .sonK>span{display:none}
+html body #sonPanel .sonFx{justify-content:center;gap:6px}
+html body #sonPanel button{background:none!important;border:0 solid transparent!important;box-shadow:none!important;color:#d6d0c3!important;
+  border-image:url(kave/a/kam/btn.webp) 66 76 66 76 fill / 11px 12px 11px 12px stretch!important}
+html body #sonPanel button[aria-pressed=true],html body #sonPanel button.on{color:#ffb84d!important;filter:brightness(.8) drop-shadow(0 0 3px rgba(255,170,60,.5))}
+html body #sonPanel #sonD.on::before{transform:scaleX(-1)}
+html body #sonPanel #sonSave{color:#ffb84d!important}
+
+/* panneau d'un rendu : banc de boutons rotatifs, nom du réglage en sérigraphie, menus en afficheur ambre */
+html body .guide{background:linear-gradient(rgba(50,50,54,.6),rgba(20,20,23,.9)),url(kave/a/kam/tex.webp) 0 0/192px #18181b!important;border:0!important;box-shadow:inset 0 3px 9px rgba(0,0,0,.85)!important}
+html body #ctl .ctlrow{flex-direction:row;flex-wrap:wrap;gap:30px 18px;padding:24px 4px 20px}
+html body #ctl .cr:has(.kam-knob){display:flex;flex-direction:column-reverse;align-items:center;gap:28px;width:82px;min-height:0}
+html body #ctl .cr:has(.kam-knob)>span{align-self:center;width:100%;font:500 11px/1.2 var(--num,'DM Mono',monospace);letter-spacing:.08em;text-transform:uppercase;color:#cfc9bb;text-align:center;max-width:82px;white-space:nowrap;overflow:hidden;text-overflow:clip}
+html body #ctl .cr select,html body #ctl .cr input[type=text]{appearance:none;-webkit-appearance:none;background:#0a0d08!important;color:#ffb84d!important;border:0!important;border-radius:3px;
+  box-shadow:inset 0 2px 5px #000,0 0 0 3px #111,0 0 0 4px #333;font:500 12px/1 var(--num,'DM Mono',monospace);letter-spacing:.06em;min-height:40px;padding:0 10px;text-shadow:0 0 4px rgba(255,160,50,.5)}
+html body #ctl .cr:has(select){grid-column:1/-1;width:100%}
+
+/* dragonne : posée sur le couvre-lit sous l'écran, à l'ordinateur seulement */
+@media (min-width:1100px) and (min-height:820px){
+  html body .ike-frame::after{content:"";position:absolute;left:14%;bottom:-62px;width:min(440px,46%);height:62px;pointer-events:none;z-index:0;
+    background:url(kave/a/kam/strap.webp) center/contain no-repeat;transform:rotate(-2.5deg);filter:drop-shadow(0 6px 5px rgba(0,0,0,.75))}
+}
+
+/* zéro phrase d'état : seules les erreurs restent écrites ; les touches d'action de la barre d'état restent */
+html body #status:not(.err) #stText{display:none!important}
+html body #status:not(.err):not(:has(button:not([hidden]))){display:none!important}
+
+/* nom trop long pour sa case : il défile sur place, en téléprompteur */
+html body .kam-tp{text-overflow:clip!important}
+html body .kam-tp>i{display:inline-block;font-style:normal;padding-left:100%;animation:kamtp 6s linear infinite}
+@media (prefers-reduced-motion:reduce){html body .kam-tp>i{animation:none;padding-left:0}}
+
+/* titre du rendu trop long : il défile sur place */
+html body .lookBar .ln.kam-tp{overflow:hidden;white-space:nowrap}
+
+/* labo : touches en pictogrammes (le nom reste lu par les lecteurs d'écran et en infobulle) ; ordre des outils : calques, images en plus, recette */
+html body #laboBody .tool>h3,html body #laboBody .hint{display:none!important}
+html body #laboBody .row{display:flex;flex-wrap:wrap;gap:8px}
+html body #laboBody .chip{font-size:0!important;letter-spacing:0;position:relative;min-width:52px;min-height:46px;padding:0!important}
+html body #laboBody .chip::before{content:'';position:absolute;inset:0;margin:auto;width:22px;height:22px;background:currentColor;-webkit-mask:var(--pk) center/contain no-repeat;mask:var(--pk) center/contain no-repeat}
+html body #laboBody ol.layers{margin:6px 0 4px;padding:8px 10px 8px 28px;background:#0a0d08;border-radius:3px;box-shadow:inset 0 2px 5px #000,0 0 0 3px #111,0 0 0 4px #333;color:#ffb84d;font:500 12px/1.6 var(--num,'DM Mono',monospace);letter-spacing:.06em;text-shadow:0 0 4px rgba(255,160,50,.5)}
+html body #laboBody .tool:nth-child(2) .chip:nth-child(1){--pk:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 4h12v12H8zM4 8v12h12'/%3E%3C/svg%3E")}
+html body #laboBody .tool:nth-child(2) .chip:nth-child(2){--pk:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z'/%3E%3C/svg%3E")}
+html body #laboBody .tool:nth-child(2) .chip:nth-child(3){--pk:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3l8 4.5v9L12 21l-8-4.5v-9zM12 12l8-4.5M12 12v9M12 12 4 7.5'/%3E%3C/svg%3E")}
+html body #laboBody .tool:nth-child(3) .chip:nth-child(1){--pk:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 15V3M7.5 7.5 12 3l4.5 4.5M4 13v7h16v-7'/%3E%3C/svg%3E")}
+html body #laboBody .tool:nth-child(3) .chip:nth-child(2){--pk:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3v12M7.5 10.5 12 15l4.5-4.5M4 13v7h16v-7'/%3E%3C/svg%3E")}
+html body #prompt{background:#0a0d08 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238f897d' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 20l4-1 11-11-3-3L5 16zM14 6l3 3'/%3E%3C/svg%3E") 12px center/20px no-repeat!important;padding-left:42px!important;color:#ffb84d!important;border:0!important;box-shadow:inset 0 2px 5px #000,0 0 0 3px #111,0 0 0 4px #333!important;font:500 13px/1 var(--num,'DM Mono',monospace)}
+
+/* 16 nov. 2026, 5 h 07 (Mauk Tenieb : « Où est le camescope entier avec le couvre-lit ? ») : à tous les formats, le caméscope entier repose sur le couvre-lit ;
+   téléphone et fenêtre étroite : marge de couvre-lit autour de l'appareil, coins arrondis ; charnière du moniteur (image de Mauk Tenieb) entre l'écran et le flanc */
+html body #app.app[data-ike-layout=narrow]{inset:clamp(10px,3.2vw,22px) clamp(10px,3.2vw,22px) clamp(14px,4vw,26px)!important;border-radius:8px;box-shadow:0 18px 40px rgba(0,0,0,.8)}
+html body #app.app:not([data-ike-layout=narrow]){inset:clamp(8px,1.4vw,18px)!important;background:none!important}
+html body #app.app[data-ike-layout=narrow] .ctrl{border-radius:6px!important}
+html body #app.app .ike-frame{z-index:3}
+html body #app.app .ike-frame::before{content:"";position:absolute;pointer-events:none;z-index:4;filter:drop-shadow(0 3px 3px rgba(0,0,0,.7))}
+html body #app.app[data-ike-layout=narrow] .ike-frame::before{left:50%;bottom:-27px;width:118px;height:38px;transform:translateX(-50%);background:url(kave/a/kam/hinge-h.webp) center/100% 100% no-repeat}
+html body #app.app:not([data-ike-layout=narrow]) .ike-frame::before{right:-21px;top:50%;width:30px;height:94px;transform:translateY(-50%);background:url(kave/a/kam/hinge-v.webp) center/100% 100% no-repeat}

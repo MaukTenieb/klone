@@ -1,0 +1,1720 @@
+/*
+ * Code: MIT licence, Copyright (c) 2026 Mauk Tenieb (see LICENSE).
+ * Korhogo material: Copyright © Mauk Tenieb & Korhogo, all rights reserved. Korhogo™,
+ * Korhogo Fauna™, Fauna Masks™, Fauna Chess™, Faunarratik™, Katabatik™, Insert Koin™,
+ * Korong!™ and any related material — characters, names, symbols, rules, lore, texts,
+ * images and music, in any form or medium, including inside this file — stay out of the
+ * MIT licence and remain the property of the author. No use of that material for
+ * training artificial intelligence. Contact: mauktenieb@gmail.com
+ */
+/*
+ * VHS cabinet — original code for Insert Koin. v2.4.0
+ *
+ * Third-party code: none.
+ *
+ * The television's screen is the shared screen of Insert Koin, ik-ecran.js:
+ * the same frame, size and place as in every program (IKEcran.layout: the
+ * screen on the left or on top, the deck and the catalogue in the controls
+ * slot), with the "vhs" rendering (glass, tape shader, wear over YouTube);
+ * the loader loads it before this file.
+ *
+ * Integration notes (kg-loader):
+ *  - Fixed full-viewport panel inside the 0x0 .kg-layer (same convention as
+ *    the other panels), scrollable on touch (kg-layer has touch-action:none).
+ *  - All English strings go through window.KGI18N.t so the repository's
+ *    kg-i18n-dict.js stays the only translation system.
+ *  - EJECT closes the cabinet the way the host's back button would, with a
+ *    last VHS roll; it never hijacks the host page's own Escape/Space keys.
+ *
+ * Public API: KGVHS.open(), KGVHS.close(), KGVHS.debug(), KGVHS.version
+ * Optional page data (all optional):
+ *   window.JUKE_TRACKS               existing jukebox catalogue (read only)
+ *   window.INSERTKOIN_VHS_FILES      [{ url, label }]          (legacy form)
+ *   window.INSERTKOIN_VHS_CONFIG     { files, standard: "PAL"|"NTSC",
+ *                                      source: "youtube"|"local",
+ *                                      youtubeNoCookie: true }
+ * Events dispatched on window: "kg-vhs:open", "kg-vhs:eject", "kg-vhs:close".
+ */
+(() => {
+  "use strict";
+
+  const VERSION = "2.3.0";
+  const ROOT_SELECTOR = "[data-vhs-root]";
+  const YT_API = "https://www.youtube.com/iframe_api";
+
+  // SP/LP/EP are gone (owner call): the wear shader keeps its classic SP
+  // intensity. Only SPEED_INTENSITY.SP is still read, via effectiveIntensity().
+  const SPEED_INTENSITY = { SP: 0.18, LP: 0.36, EP: 0.58 };
+  const STANDARDS = {
+    // In France the 625/50 family shipped as PAL·SECAM on the same deck;
+    // one shader path, the authentic label.
+    PAL: { lines: 576, std: 0, label: "PAL·SECAM" },
+    NTSC: { lines: 480, std: 1, label: "NTSC" },
+  };
+  const REDUCED_MOTION_FACTOR = 0.55;
+
+  /* ------------------------------------------------------------------ *
+   * i18n. English source strings, translated by the repository's own
+   * KGI18N layer (kg-i18n-dict.js, `exact` entries). VHS, PAL, NTSC and
+   * the SP/LP/EP speeds are the same word in both languages.
+   * ------------------------------------------------------------------ */
+
+  function t(key) {
+    if (window.KGI18N && typeof window.KGI18N.t === "function") {
+      try {
+        const out = window.KGI18N.t(key);
+        if (typeof out === "string" && out) return out;
+      } catch (_) { /* fall through to the key itself */ }
+    }
+    return key;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * State. A fresh object per open(); callbacks from an old session
+   * compare against the module-level `state` and bail out.
+   * ------------------------------------------------------------------ */
+
+  function makeState() {
+    return {
+      root: null,
+      destroyed: true,
+      opened: false,
+      cleanups: [],
+      layerTouch: null,
+
+      source: "youtube",
+      standard: "PAL",
+      speed: "SP",
+      status: "Stop",
+      messageKey: "",
+      reducedMotion: false,
+      noCookie: true,
+
+      // YouTube
+      tracks: [],
+      trackIndex: 0,
+      player: null,
+      playerReady: false,
+      ytLoading: false,
+      ytPlaying: false,
+      ytMuted: false,
+      ytTimer: 0,
+      ytErrorStreak: 0,
+      ytSkipTimer: 0,
+      scanTimer: 0,
+      scanDir: 0,
+      scanHeld: false,
+      pendingTrack: null,
+
+      // Local files
+      localFiles: [],
+      localIndex: -1,
+      video: null,
+      canvas: null,
+
+      // Screen (ik-ecran.js)
+      ecran: null,
+      glOk: false,
+      fallback: false,
+
+      rootVisible: true,
+    };
+  }
+
+  let state = makeState();
+  let ytPromise = null;
+  let retryRaf = 0;
+  let hostVolume = null; // 0..100, set by a host TV's volume key (KGVHS.volume)
+  const counters = { players: 0 };
+
+  const live = (s) => s === state && !s.destroyed;
+
+  function q(s, selector) {
+    return s.root ? s.root.querySelector(selector) : null;
+  }
+
+  function qa(s, selector) {
+    return s.root ? Array.prototype.slice.call(s.root.querySelectorAll(selector)) : [];
+  }
+
+  function setText(s, selector, value) {
+    const el = q(s, selector);
+    if (el && el.textContent !== value) el.textContent = value;
+  }
+
+  function on(s, target, type, handler, options) {
+    target.addEventListener(type, handler, options);
+    s.cleanups.push(() => target.removeEventListener(type, handler, options));
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Small UI helpers
+   * ------------------------------------------------------------------ */
+
+  function renderStatus(s) {
+    // During a picture search the deck window shows REW / FFW; media events
+    // must not overwrite the scan indicators until the scan ends.
+    if (s.scanDir) return;
+    const label = t(s.status);
+    setText(s, "[data-vhs-status]", label);
+    setText(s, "[data-vhs-osd-state]", label);
+    // 16 nov. 2026 (Mauk Tenieb, images du magnétoscope) : l'afficheur vert montre l'état en picto (lecture, pause, arrêt)
+    if (s.root) s.root.setAttribute("data-vhs-state", String(s.status || "Stop").toLowerCase());
+  }
+
+  function isPlaying(s) {
+    if (s.source === "youtube") return s.ytPlaying;
+    return !!(s.video && !s.video.paused && !s.video.ended);
+  }
+
+  function updatePlayButton(s) {
+    setText(s, "[data-vhs-play-label]", isPlaying(s) ? "\u275A\u275A" : "\u25B6");
+  }
+
+  function setStatus(s, status) {
+    s.status = status;
+    renderStatus(s);
+    updatePlayButton(s);
+    // [IK] i1.4 : télé vivante au repos, la neige tient l'écran tant que le magnétoscope reste sur STOP
+    if (s.ecran) s.ecran.set({ snow: status === "Stop" || !(s.root && s.root.classList.contains("is-loaded")) });
+  }
+
+  function renderMessage(s) {
+    setText(s, "[data-vhs-message]", s.messageKey ? t(s.messageKey) : "");
+  }
+
+  function setMessage(s, key) {
+    s.messageKey = key || "";
+    renderMessage(s);
+  }
+
+  function applyI18n(s) {
+    qa(s, "[data-vhs-i18n]").forEach((el) => {
+      el.textContent = t(el.getAttribute("data-vhs-i18n"));
+    });
+    qa(s, "[data-vhs-i18n-aria]").forEach((el) => {
+      el.setAttribute("aria-label", t(el.getAttribute("data-vhs-i18n-aria")));
+    });
+    renderStatus(s);
+    renderMessage(s);
+  }
+
+  function formatTime(seconds) {
+    const total = Math.max(0, Math.floor(Number.isFinite(seconds) ? seconds : 0));
+    const h = Math.floor(total / 3600);
+    const m = Math.floor((total % 3600) / 60);
+    const sec = total % 60;
+    return [h, m, sec].map((n) => String(n).padStart(2, "0")).join(":");
+  }
+
+  function setCounter(s, seconds) {
+    setText(s, "[data-vhs-osd-counter]", formatTime(seconds));
+    segDraw(s, seconds);
+  }
+
+  /* 16 nov. 2026 (Mauk Tenieb, images du magnétoscope) : le compteur de bande en chiffres à segments verts,
+     posé sur le « 12:00 » de l'afficheur photographié ; minutes et secondes, comme un compteur d'époque */
+  const SEG = { 0: "abcdef", 1: "bc", 2: "abged", 3: "abgcd", 4: "fgbc", 5: "afgcd", 6: "afgedc", 7: "abc", 8: "abcdefg", 9: "abcfgd" };
+  function segDigit(x, d) {
+    const on = SEG[d] || "", w = 26, h = 52, t = 5, y = 14;
+    const P = {
+      a: [x + 4, y, w - 8, t], g: [x + 4, y + h / 2 - t / 2, w - 8, t], d: [x + 4, y + h - t, w - 8, t],
+      f: [x, y + 3, t, h / 2 - 5], b: [x + w - t, y + 3, t, h / 2 - 5],
+      e: [x, y + h / 2 + 2, t, h / 2 - 5], c: [x + w - t, y + h / 2 + 2, t, h / 2 - 5]
+    };
+    return Object.keys(P).map((k) => {
+      const r = P[k];
+      return '<rect x="' + r[0] + '" y="' + r[1] + '" width="' + r[2] + '" height="' + r[3] + '" rx="1.6" transform="skewX(-6)" class="' + (on.indexOf(k) >= 0 ? "on" : "off") + '"/>';
+    }).join("");
+  }
+  function segDraw(s, seconds) {
+    const svg = q(s, "[data-vhs-seg]");
+    if (!svg) return;
+    const total = Math.max(0, Math.floor(Number.isFinite(seconds) ? seconds : 0));
+    const m = Math.min(99, Math.floor(total / 60)), sec = total % 60;
+    const key = m * 60 + sec;
+    if (svg.__k === key) return;
+    svg.__k = key;
+    const dg = [Math.floor(m / 10), m % 10, Math.floor(sec / 10), sec % 10];
+    svg.innerHTML = '<rect class="glass" x="14" y="7" width="190" height="66" rx="2"/>' +
+      '<path class="st st-play" d="M20 17l10 6-10 6z"/><path class="st st-pause" d="M20 17h3.5v12H20zM26 17h3.5v12H26z"/>' +
+      '<rect class="st st-stop" x="20" y="18" width="9" height="9" rx="1"/><circle class="st st-load" cx="25" cy="23" r="4"/>' +
+      segDigit(48, dg[0]) + segDigit(80, dg[1]) +
+      '<rect class="on" x="113" y="30" width="5" height="5" rx="1"/><rect class="on" x="111" y="50" width="5" height="5" rx="1"/>' +
+      segDigit(128, dg[2]) + segDigit(160, dg[3]);
+  }
+
+  function effectiveIntensity(s) {
+    return SPEED_INTENSITY[s.speed] * (s.reducedMotion ? REDUCED_MOTION_FACTOR : 1);
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Tracks (YouTube catalogue) — read from the existing jukebox data
+   * ------------------------------------------------------------------ */
+
+  function readTracks() {
+    // 1) Scraped cassette library (kg-vhs-library.js → CHANNEL.SCRAPE backend).
+    //    Kept separate from JUKE_TRACKS so the Motel Sound jukebox is untouched.
+    try {
+      if (Array.isArray(window.KG_VHS_TRACKS) && window.KG_VHS_TRACKS.length) {
+        return window.KG_VHS_TRACKS;
+      }
+    } catch (_) { /* ignore */ }
+    // 2) A top-level `var JUKE_TRACKS` is NOT a property of window, but it is
+    //    visible by name from other classic scripts. Try both.
+    try {
+      if (typeof JUKE_TRACKS !== "undefined" && Array.isArray(JUKE_TRACKS)) return JUKE_TRACKS;
+    } catch (_) { /* ignore */ }
+    return Array.isArray(window.JUKE_TRACKS) ? window.JUKE_TRACKS : [];
+  }
+
+  function videoIdFrom(value) {
+    if (typeof value !== "string") return "";
+    const v = value.trim();
+    if (/^[\w-]{11}$/.test(v)) return v;
+    const m = v.match(/(?:youtu\.be\/|[?&]v=|\/embed\/|\/shorts\/)([\w-]{11})/);
+    return m ? m[1] : "";
+  }
+
+  function trackId(track) {
+    if (typeof track === "string") return videoIdFrom(track);
+    if (!track || typeof track !== "object") return "";
+    const keys = ["id", "videoId", "youtubeId", "yt", "v", "url", "href", "link"];
+    for (let i = 0; i < keys.length; i++) {
+      const id = videoIdFrom(track[keys[i]]);
+      if (id) return id;
+    }
+    return "";
+  }
+
+  function trackTitle(track, id) {
+    const raw = typeof track === "string"
+      ? track
+      : (track && (track.title || track.name || track.label || track.t)) || "";
+    const cleaned = String(raw || "")
+      .replace(/^\s*\d+\s*[)\].:-]\s*/, "")
+      .replace(/\s+/g, " ")
+      .trim();
+    return cleaned || id;
+  }
+
+  function normaliseTracks(s) {
+    const source = readTracks();
+    s.tracks = source
+      .map((track) => {
+        const id = trackId(track);
+        return id ? { id, title: trackTitle(track, id) } : null;
+      })
+      .filter(Boolean);
+
+    if (source.length && !s.tracks.length) {
+      console.warn("[VHS] JUKE_TRACKS has " + source.length +
+        " entries but none exposes a usable YouTube id; check the data shape.");
+    }
+  }
+
+  function normaliseFiles(s, files) {
+    s.localFiles = (files || [])
+      .filter((item) => item && typeof item.url === "string" && item.url)
+      .map((item) => ({
+        url: item.url,
+        label: item.label || item.url.split("?")[0].split("/").pop(),
+      }));
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Track / file lists and selection
+   * ------------------------------------------------------------------ */
+
+  function listLength(s) {
+    return s.source === "youtube" ? s.tracks.length : s.localFiles.length;
+  }
+
+  function currentIndex(s) {
+    return s.source === "youtube" ? s.trackIndex : s.localIndex;
+  }
+
+  /* Korhogo Kuration (ik-kuration.js): ♥ keeps the current track in the visitor's own cassette */
+  function heartState(s) {
+    const b = q(s, "[data-vhs-action='heart']");
+    if (!b) return;
+    const t = s.source === "youtube" ? s.tracks[s.trackIndex] : null;
+    const on = !!(t && window.IKK && window.IKK.has(t.id));
+    b.setAttribute("aria-pressed", on ? "true" : "false");
+    b.textContent = on ? "\u2665" : "\u2661";
+    b.disabled = !t || !window.IKK;
+  }
+  function toggleHeart(s) {
+    const t = s.source === "youtube" ? s.tracks[s.trackIndex] : null;
+    if (!t || !window.IKK) return;
+    window.IKK.toggle({ id: t.id, title: t.title });
+    heartState(s);
+  }
+
+  function updateTrackUI(s) {
+    const n = listLength(s);
+    const i = currentIndex(s);
+    let label = "\u2014";
+
+    if (s.source === "youtube" && s.tracks[i]) {
+      label = (i + 1) + "/" + n + " \u2014 " + s.tracks[i].title;
+    } else if (s.source === "local" && s.localFiles[i]) {
+      label = (i + 1) + "/" + n + " \u2014 " + s.localFiles[i].label;
+    }
+    setText(s, "[data-vhs-osd-track]", label);
+    if (s.root) s.root.classList.toggle("is-loaded", label !== "\u2014");
+    // 16 nov. 2026 (Mauk Tenieb, images du magnétoscope) : nouvelle étiquette, nouveau calcul du téléprompteur
+    const lb = q(s, ".vhs-face .vhs-label");
+    if (lb) lb.classList.remove("ik-tp-on");
+    if (s.ecran) s.ecran.set({ snow: label === "\u2014" || s.status === "Stop" });
+    heartState(s);
+
+    const mark = (selector, active) => {
+      qa(s, selector).forEach((button, idx) => {
+        button.classList.toggle("is-active", idx === active);
+        button.setAttribute("aria-current", idx === active ? "true" : "false");
+        // 16 nov. 2026 (Mauk Tenieb, images du magnétoscope) : la piste en cours vient sous les yeux dans sa liste seulement ;
+        // le meuble reste en place (zéro saut : la façade et l'étagère gardent leur place à l'écran)
+        const list = idx === active && button.parentElement && button.parentElement.closest("ol");
+        if (list && list.scrollHeight > list.clientHeight + 2 && /auto|scroll/.test(getComputedStyle(list).overflowY)) {
+          const top = button.getBoundingClientRect().top - list.getBoundingClientRect().top + list.scrollTop, bot = top + button.offsetHeight;
+          if (top < list.scrollTop) list.scrollTop = top;
+          else if (bot > list.scrollTop + list.clientHeight) list.scrollTop = bot - list.clientHeight;
+        }
+      });
+    };
+    mark("[data-vhs-track]", s.source === "youtube" ? s.trackIndex : -1);
+    mark("[data-vhs-local-item]", s.source === "local" ? s.localIndex : -1);
+  }
+
+  function renderLists(s) {
+    const tracklist = q(s, "[data-vhs-tracklist]");
+    if (tracklist) {
+      tracklist.textContent = "";
+      s.tracks.forEach((track, index) => {
+        const li = document.createElement("li");
+        const button = document.createElement("button");
+        button.type = "button";
+        button.dataset.vhsTrack = String(index);
+        button.textContent = (index + 1) + ". " + track.title;
+        li.appendChild(button);
+        tracklist.appendChild(li);
+      });
+    }
+
+    const locals = q(s, "[data-vhs-local-list]");
+    const empty = q(s, "[data-vhs-local-empty]");
+    if (locals) {
+      locals.textContent = "";
+      s.localFiles.forEach((file, index) => {
+        const li = document.createElement("li");
+        const button = document.createElement("button");
+        button.type = "button";
+        button.dataset.vhsLocalItem = String(index);
+        button.textContent = (index + 1) + ". " + file.label;
+        li.appendChild(button);
+        locals.appendChild(li);
+      });
+    }
+    if (empty) empty.hidden = s.localFiles.length > 0;
+
+    // Without any file, the FILES tab would only lead to an empty panel.
+    const tab = q(s, "[data-vhs-source='local']");
+    if (tab) tab.hidden = s.localFiles.length === 0;
+  }
+
+  function wrapIndex(i, n) {
+    return ((i % n) + n) % n;
+  }
+
+  function selectTrack(s, index, autoplay) {
+    if (!s.tracks.length) return;
+    s.trackIndex = wrapIndex(index, s.tracks.length);
+    updateTrackUI(s);
+    s.pendingTrack = { autoplay: autoplay !== false };
+    if (s.player && s.playerReady) applyPendingTrack(s);
+    else ensureYouTube(s);
+  }
+
+  function applyPendingTrack(s) {
+    const pending = s.pendingTrack;
+    const track = s.tracks[s.trackIndex];
+    if (!pending || !track || !s.player) return;
+    s.pendingTrack = null;
+    try {
+      if (pending.autoplay) s.player.loadVideoById(track.id);
+      else s.player.cueVideoById(track.id);
+    } catch (_) { /* player not usable yet */ }
+  }
+
+  function selectLocal(s, index, autoplay) {
+    if (!s.localFiles.length || !s.video) return;
+    s.localIndex = wrapIndex(index, s.localFiles.length);
+    const file = s.localFiles[s.localIndex];
+
+    setMessage(s, "");
+    updateTrackUI(s);
+    s.video.src = file.url;
+    setCounter(s, 0);
+    setSeek(s, 0);
+
+    if (s.ecran) { s.ecran.refresh(); if (!s.reducedMotion && s.glOk && !s.fallback) s.ecran.pulse("roll"); }
+
+    if (autoplay !== false) {
+      const p = s.video.play();
+      if (p && typeof p.catch === "function") p.catch(() => { if (live(s)) setStatus(s, "Pause"); });
+    }
+  }
+
+  function step(s, delta) {
+    if (s.source === "youtube") selectTrack(s, s.trackIndex + delta, true);
+    else selectLocal(s, (s.localIndex < 0 ? 0 : s.localIndex) + delta, true);
+  }
+
+  function randomItem(s) {
+    const n = listLength(s);
+    if (n < 2) return;
+    const current = currentIndex(s);
+    let next = current;
+    while (next === current) next = Math.floor(Math.random() * n);
+    if (s.source === "youtube") selectTrack(s, next, true);
+    else selectLocal(s, next, true);
+  }
+
+  /* ------------------------------------------------------------------ *
+   * YouTube
+   * ------------------------------------------------------------------ */
+
+  function loadYouTubeAPI() {
+    if (window.YT && window.YT.Player) return Promise.resolve();
+    if (ytPromise) return ytPromise;
+
+    ytPromise = new Promise((resolve, reject) => {
+      let settled = false;
+      let poll = 0;
+      let timer = 0;
+
+      const finish = (fn, arg) => {
+        if (settled) return;
+        settled = true;
+        clearInterval(poll);
+        clearTimeout(timer);
+        fn(arg);
+      };
+
+      // Chain, never replace: the jukebox may use the same global callback.
+      const previous = window.onYouTubeIframeAPIReady;
+      window.onYouTubeIframeAPIReady = function () {
+        try {
+          if (typeof previous === "function") previous.apply(this, arguments);
+        } finally {
+          finish(resolve);
+        }
+      };
+
+      // Safety net if another script overwrote the callback after us.
+      poll = setInterval(() => {
+        if (window.YT && window.YT.Player) finish(resolve);
+      }, 250);
+      timer = setTimeout(() => finish(reject, new Error("YouTube API timeout")), 15000);
+
+      if (!document.querySelector('script[src="' + YT_API + '"]')) {
+        const script = document.createElement("script");
+        script.src = YT_API;
+        script.async = true;
+        script.onerror = () => finish(reject, new Error("YouTube API blocked"));
+        document.head.appendChild(script);
+      }
+    });
+
+    ytPromise = ytPromise.catch((error) => {
+      ytPromise = null; // allow a later retry
+      throw error;
+    });
+    return ytPromise;
+  }
+
+  function ensureYouTube(s) {
+    if (s.player || s.ytLoading || !live(s)) return;
+    if (!s.tracks.length) {
+      setMessage(s, "Feed the cassette with tapes.");
+      return;
+    }
+    s.ytLoading = true;
+    loadYouTubeAPI()
+      .then(() => {
+        s.ytLoading = false;
+        if (live(s) && s.source === "youtube") createPlayer(s);
+        else if (live(s) && !s.player) createPlayer(s);
+      })
+      .catch(() => {
+        s.ytLoading = false;
+        if (live(s)) setMessage(s, "The player could not be loaded.");
+      });
+  }
+
+  function createPlayer(s) {
+    if (!live(s) || s.player || !window.YT || !window.YT.Player) return;
+    const track = s.tracks[s.trackIndex];
+    const mount = q(s, "[data-vhs-youtube]");
+    if (!track || !mount) return;
+
+    // YT.Player replaces its target element and destroy() removes the
+    // iframe, so always hand it a fresh child and keep the mount intact.
+    mount.textContent = "";
+    const host = document.createElement("div");
+    mount.appendChild(host);
+
+    const vars = { playsinline: 1, rel: 0, modestbranding: 1 };
+    if (/^https?:$/.test(location.protocol)) vars.origin = location.origin;
+
+    const options = {
+      videoId: track.id,
+      width: "100%",
+      height: "100%",
+      playerVars: vars,
+      events: {
+        onReady: () => onYouTubeReady(s),
+        onStateChange: (event) => onYouTubeState(s, event),
+        onError: () => onYouTubeError(s),
+      },
+    };
+    if (s.noCookie) options.host = "https://www.youtube-nocookie.com";
+
+    counters.players++;
+    s.player = new window.YT.Player(host, options);
+  }
+
+  function destroyPlayer(s) {
+    stopYtClock(s);
+    clearTimeout(s.ytSkipTimer);
+    if (!s.player) return;
+    try { s.player.stopVideo(); } catch (_) { /* ignore */ }
+    try { s.player.destroy(); } catch (_) { /* ignore */ }
+    s.player = null;
+    s.playerReady = false;
+    s.ytPlaying = false;
+  }
+
+  function startYtClock(s) {
+    stopYtClock(s);
+    s.ytTimer = setInterval(() => {
+      if (!live(s) || !s.player) return;
+      try { setCounter(s, s.player.getCurrentTime()); } catch (_) { /* ignore */ }
+    }, 500);
+  }
+
+  function stopYtClock(s) {
+    if (s.ytTimer) clearInterval(s.ytTimer);
+    s.ytTimer = 0;
+  }
+
+  function onYouTubeReady(s) {
+    if (!live(s)) return;
+    s.playerReady = true;
+    setMessage(s, "");
+    if (s.pendingTrack) applyPendingTrack(s);
+    if (s.ytMuted) {
+      try { s.player.mute(); } catch (_) { /* ignore */ }
+    }
+    if (hostVolume !== null) { try { s.player.setVolume(hostVolume); } catch (_) { /* ignore */ } }
+  }
+
+  function onYouTubeState(s, event) {
+    if (!live(s) || !window.YT || !window.YT.PlayerState) return;
+    const states = window.YT.PlayerState;
+
+    if (event.data === states.PLAYING) {
+      s.ytPlaying = true;
+      s.ytErrorStreak = 0;
+      setMessage(s, "");
+      if (s.source === "youtube") setStatus(s, "Play");
+      startYtClock(s);
+    } else if (event.data === states.PAUSED) {
+      s.ytPlaying = false;
+      stopYtClock(s);
+      if (s.source === "youtube") setStatus(s, "Pause");
+    } else if (event.data === states.ENDED) {
+      s.ytPlaying = false;
+      stopYtClock(s);
+      if (s.source === "youtube") setStatus(s, "Stop");
+      if (s.source === "youtube") step(s, 1);
+    } else if (event.data === states.BUFFERING) {
+      if (s.source === "youtube") setStatus(s, "Load");
+    } else {
+      s.ytPlaying = false;
+      if (s.source === "youtube") setStatus(s, "Stop");
+    }
+  }
+
+  function onYouTubeError(s) {
+    if (!live(s)) return;
+    s.ytPlaying = false;
+    setMessage(s, "YouTube could not load this video.");
+    if (s.source === "youtube") setStatus(s, "Stop");
+
+    // Skip unavailable videos, but never loop forever if all of them fail.
+    s.ytErrorStreak++;
+    if (s.ytErrorStreak < s.tracks.length) {
+      clearTimeout(s.ytSkipTimer);
+      s.ytSkipTimer = setTimeout(() => {
+        if (live(s) && s.source === "youtube") step(s, 1);
+      }, 800);
+    }
+  }
+
+  function pauseYouTube(s) {
+    if (!s.player || !s.playerReady) return;
+    try { s.player.pauseVideo(); } catch (_) { /* ignore */ }
+  }
+
+
+  /* ------------------------------------------------------------------ *
+   * [IK] The deck's own noises, synthesised: key clicks, the relay that
+   * threads the tape, the capstan motor, the spinning reels during REW /
+   * FFW, the eject spring. Silent when the arcade's FX switch is off.
+   * ------------------------------------------------------------------ */
+  const VSND = (() => {
+    let ac = null, noiseBuf = null, whir = null;
+    const fxOn = () => { const b = document.getElementById("snd"); return !b || b.getAttribute("aria-pressed") !== "false"; };
+    const ctx = () => {
+      if (!fxOn()) return null;
+      try {
+        if (!ac) {
+          ac = new (window.AudioContext || window.webkitAudioContext)();
+          const n = ac.sampleRate;
+          noiseBuf = ac.createBuffer(1, n, n);
+          const d = noiseBuf.getChannelData(0);
+          for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+        }
+        if (ac.state === "suspended") ac.resume();
+      } catch (_) { return null; }
+      return ac;
+    };
+    const noise = (c, t0, dur, type, freq, q, gain) => {
+      const src = c.createBufferSource(); src.buffer = noiseBuf;
+      const f = c.createBiquadFilter(); f.type = type; f.frequency.value = freq; f.Q.value = q || 1;
+      const g = c.createGain(); g.gain.setValueAtTime(gain, t0); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      src.connect(f).connect(g).connect(c.destination); src.start(t0); src.stop(t0 + dur + 0.02);
+    };
+    const thump = (c, t0, freq, dur, gain) => {
+      const o = c.createOscillator(), g = c.createGain();
+      o.type = "sine"; o.frequency.setValueAtTime(freq, t0); o.frequency.exponentialRampToValueAtTime(freq * 0.5, t0 + dur);
+      g.gain.setValueAtTime(gain, t0); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      o.connect(g).connect(c.destination); o.start(t0); o.stop(t0 + dur + 0.02);
+    };
+    const api = {
+      key() { const c = ctx(); if (!c) return; const t = c.currentTime;
+        noise(c, t, 0.018, "bandpass", 3200, 1.4, 0.22); thump(c, t, 140, 0.05, 0.18); },
+      thread() { const c = ctx(); if (!c) return; const t = c.currentTime;
+        thump(c, t, 90, 0.09, 0.35); noise(c, t, 0.03, "bandpass", 1800, 2, 0.2);              // relay
+        noise(c, t + 0.08, 0.7, "bandpass", 420, 3, 0.05);                                     // threading arms
+        thump(c, t + 0.62, 70, 0.08, 0.25); noise(c, t + 0.62, 0.025, "highpass", 2500, 1, 0.12); },
+      load() { const c = ctx(); if (!c) return; const t = c.currentTime;
+        noise(c, t, 0.12, "lowpass", 900, 1, 0.18); thump(c, t + 0.05, 60, 0.18, 0.4);         // tape pushed in
+        noise(c, t + 0.2, 1.0, "bandpass", 300, 4, 0.06); thump(c, t + 1.15, 80, 0.09, 0.3); }, // carriage down
+      eject() { const c = ctx(); if (!c) return; const t = c.currentTime;
+        thump(c, t, 110, 0.07, 0.3); noise(c, t + 0.02, 0.5, "bandpass", 520, 3, 0.07);
+        const o = c.createOscillator(), g = c.createGain(); o.type = "triangle";
+        o.frequency.setValueAtTime(240, t + 0.45); o.frequency.exponentialRampToValueAtTime(90, t + 0.6);
+        g.gain.setValueAtTime(0.08, t + 0.45); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.62);
+        o.connect(g).connect(c.destination); o.start(t + 0.45); o.stop(t + 0.65);
+        noise(c, t + 0.48, 0.05, "highpass", 1500, 1, 0.12); },
+      whirStart(dir) { const c = ctx(); if (!c || whir) return; const t = c.currentTime;
+        const src = c.createBufferSource(); src.buffer = noiseBuf; src.loop = true;
+        const f = c.createBiquadFilter(); f.type = "bandpass"; f.Q.value = 6;
+        f.frequency.setValueAtTime(260, t); f.frequency.exponentialRampToValueAtTime(dir < 0 ? 1100 : 950, t + 1.6);
+        const o = c.createOscillator(); o.type = "sawtooth";
+        o.frequency.setValueAtTime(38, t); o.frequency.exponentialRampToValueAtTime(dir < 0 ? 150 : 128, t + 1.6);
+        const og = c.createGain(); og.gain.value = 0.018;
+        const g = c.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.09, t + 0.25);
+        src.connect(f).connect(g); o.connect(og).connect(g); g.connect(c.destination);
+        src.start(t); o.start(t); whir = { src, o, g };
+        thump(c, t, 100, 0.06, 0.25); },
+      whirStop() { if (!whir || !ac) return; const t = ac.currentTime, w = whir; whir = null;
+        w.g.gain.cancelScheduledValues(t); w.g.gain.setValueAtTime(w.g.gain.value, t); w.g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
+        w.src.stop(t + 0.2); w.o.stop(t + 0.2); thump(ac, t + 0.05, 85, 0.07, 0.3); },
+    };
+    return api;
+  })();
+
+  /* ------------------------------------------------------------------ *
+   * Transport
+   * ------------------------------------------------------------------ */
+
+  // Picture search (REW / FFW). Holding one of the arrows scrubs the tape
+  // with on-screen signals: counter running fast, REW/FFW in the deck
+  // window, horizontal noise bars over the picture, audio silent. Release
+  // lands on a still frame. A quick tap nudges the tape instead (see
+  // nudge() below); the tracklist (and R) change tracks.
+  function startScan(s, dir, opts) {
+    stopScan(s);
+    if (opts && opts.release) return; // key released: scan already torn down
+    s.scanDir = dir;
+    VSND.whirStart(dir);
+    const root = s.root;
+    if (root) {
+      const screen = root.querySelector("[data-vhs-screen]");
+      if (screen) screen.classList.add(dir < 0 ? "is-rew" : "is-ffw");
+    }
+    const scan = q(s, "[data-vhs-scan]");
+    if (scan) scan.hidden = false;
+    pauseAllMedia(s);
+    const stateLabel = q(s, "[data-vhs-osd-state]");
+    if (stateLabel) setText(s, "[data-vhs-osd-state]", dir < 0 ? "REW" : "FFW");
+    const status = q(s, "[data-vhs-status]");
+    if (status) status.textContent = dir < 0 ? "REW" : "FFW";
+    const step = () => {
+      s.scanTimer = 0;
+      handleScanEnd(s);
+    };
+    s.scanTimer = setTimeout(step, 4000);
+
+    // The counter spins at high speed while the heads skim the tape
+    // (virtual on the catalogue, real scrubbing on local files).
+    s.scanStartT = performance.now();
+    s.scanSec = 0;
+    const bump = () => {
+      if (!live(s) || !s.scanDir) return;
+      if (s.source === "local" && s.video && Number.isFinite(s.video.duration) && s.video.duration > 0) {
+        const t = s.video.currentTime + dir * 8 / 60;
+        s.video.currentTime = Math.max(0, Math.min(s.video.duration - 0.05, t));
+      } else {
+        // ~8x real time: the tape counter flies while the picture searches.
+        s.scanSec += 8 / 60;
+        setCounter(s, s.scanSec);
+      }
+      requestAnimationFrame(bump);
+    };
+    requestAnimationFrame(bump);
+  }
+
+  function stopScan(s) {
+    if (s.scanTimer) { clearTimeout(s.scanTimer); s.scanTimer = 0; }
+    if (!s.scanDir) return;
+    s.scanDir = 0;
+    VSND.whirStop();
+    const root = s.root;
+    if (root) {
+      const screen = root.querySelector("[data-vhs-screen]");
+      if (screen) screen.classList.remove("is-rew", "is-ffw");
+    }
+    const scan = q(s, "[data-vhs-scan]");
+    if (scan) scan.hidden = true;
+    // s.status was never overwritten during the scan (renderStatus is
+    // guarded), so it still holds the pre-scan deck state: restore it.
+    setStatus(s, s.status);
+  }
+
+  function handleScanEnd(s) {
+    // Scan timeout: the deck stops where it is, on a frozen frame (the
+    // classic picture search always lands on a still). Playback resumes
+    // from the play button.
+    if (!s.scanDir) return;
+    stopScan(s);
+  }
+
+  // Tape nudge (a quick REW / FFW tap): the heads skim the tape for a
+  // beat — the picture tears into noise, OSD says REW/FFW — and playback
+  // lands five seconds earlier or later, like a real deck rewinding a
+  // few seconds of programme. Holding the button still runs the full
+  // picture search.
+  function nudge(s, dir, secs) {
+    const step = secs && secs > 0 ? secs : 5;
+    if (s.scanDir) return; // a held picture search owns the picture
+    const root = s.root;
+    if (root) {
+      const screen = root.querySelector("[data-vhs-screen]");
+      if (screen) screen.classList.add(dir < 0 ? "is-rew" : "is-ffw");
+    }
+    const scan = q(s, "[data-vhs-scan]");
+    if (scan) scan.hidden = false;
+    const stateLabel = q(s, "[data-vhs-osd-state]");
+    if (stateLabel) setText(s, "[data-vhs-osd-state]", dir < 0 ? "REW" : "FFW");
+    const status = q(s, "[data-vhs-status]");
+    if (status) status.textContent = dir < 0 ? "REW" : "FFW";
+    if (s.ecran) s.ecran.refresh();
+
+    // The actual tape move: n seconds of programme, clamped to the reel.
+    if (s.source === "local" && s.video && Number.isFinite(s.video.duration) && s.video.duration > 0) {
+      s.video.currentTime = Math.max(0, Math.min(s.video.duration - 0.05, s.video.currentTime + dir * step));
+    } else if (s.source === "youtube" && s.player) {
+      try {
+        const d = s.player.getDuration ? s.player.getDuration() || 0 : 0;
+        let t = (s.player.getCurrentTime() || 0) + dir * step;
+        if (t < 0) t = 0;
+        if (d > 0 && t > d - 0.05) t = d - 0.05;
+        s.player.seekTo(t, true);
+      } catch (_) { /* the player will catch up on its own */ }
+    }
+
+    // The burst is brief: the heads settle and the picture returns.
+    if (s.nudgeTimer) clearTimeout(s.nudgeTimer);
+    s.nudgeTimer = setTimeout(() => {
+      s.nudgeTimer = 0;
+      if (s.scanDir) return; // a picture search took over mid-burst
+      const r = s.root;
+      if (r) {
+        const screen = r.querySelector("[data-vhs-screen]");
+        if (screen) screen.classList.remove("is-rew", "is-ffw");
+      }
+      const sc = q(s, "[data-vhs-scan]");
+      if (sc) sc.hidden = true;
+      setStatus(s, s.status);
+    }, 650);
+  }
+
+  function togglePlay(s) {
+    if (s.source === "youtube") {
+      if (!s.player || !s.playerReady) {
+        s.pendingTrack = s.pendingTrack || { autoplay: true };
+        ensureYouTube(s);
+        return;
+      }
+      try {
+        if (s.ytPlaying) s.player.pauseVideo();
+        else s.player.playVideo();
+      } catch (_) { /* ignore */ }
+      return;
+    }
+
+    if (!s.video) return;
+    if (s.localIndex < 0) {
+      selectLocal(s, 0, true);
+      return;
+    }
+    if (s.video.paused || s.video.ended) {
+      const p = s.video.play();
+      if (p && typeof p.catch === "function") p.catch(() => {});
+    } else {
+      s.video.pause();
+    }
+  }
+
+  function toggleMute(s) {
+    let muted;
+    if (s.source === "youtube") {
+      s.ytMuted = !s.ytMuted;
+      muted = s.ytMuted;
+      if (s.player && s.playerReady) {
+        try { if (muted) s.player.mute(); else s.player.unMute(); } catch (_) { /* ignore */ }
+      }
+    } else if (s.video) {
+      s.video.muted = !s.video.muted;
+      muted = s.video.muted;
+    }
+    const button = q(s, "[data-vhs-action='mute']");
+    if (button) button.setAttribute("aria-pressed", muted ? "true" : "false");
+  }
+
+  function setSeek(s, ratio) {
+    const slider = q(s, "[data-vhs-seek]");
+    if (!slider || slider === document.activeElement) return;
+    slider.value = String(Math.round(Math.max(0, Math.min(1, ratio || 0)) * 1000));
+  }
+
+  function setSource(s, source, opts) {
+    if (source === "local" && !s.localFiles.length) source = "youtube";
+    const switching = s.source !== source;
+    s.source = source;
+    s.root.dataset.mode = source === "local" ? "local" : "catalogue";
+
+    // Changing the tape: the deck ejects and loads again (skipped in boot and
+    // under reduced motion; the boot's own first setSource is not a switch).
+    if (switching && !bootState && !s.reducedMotion) {
+      const screen = q(s, "[data-vhs-screen]");
+      if (screen) {
+        screen.classList.remove("is-tape-swap");
+        void screen.offsetWidth;
+        screen.classList.add("is-tape-swap");
+        setTimeout(() => { if (live(s)) screen.classList.remove("is-tape-swap"); }, 900);
+      }
+    }
+
+    const tabs = { youtube: q(s, "[data-vhs-source='youtube']"), local: q(s, "[data-vhs-source='local']") };
+    Object.keys(tabs).forEach((key) => {
+      if (!tabs[key]) return;
+      tabs[key].classList.toggle("is-active", key === source);
+      tabs[key].setAttribute("aria-selected", key === source ? "true" : "false");
+    });
+    q(s, "[data-vhs-catalogue]").hidden = source !== "youtube";
+    q(s, "[data-vhs-local]").hidden = source !== "local";
+
+    // One source at a time: never leave the other one playing.
+    if (source === "local") {
+      pauseYouTube(s);
+      const video = s.video;
+      setStatus(s, video && video.src && !video.paused ? "Play" : video && video.src ? "Pause" : "Stop");
+      setCounter(s, video && video.src ? video.currentTime : 0);
+      const mute = q(s, "[data-vhs-action='mute']");
+      if (mute && video) mute.setAttribute("aria-pressed", video.muted ? "true" : "false");
+    } else {
+      if (s.video && !s.video.paused) s.video.pause();
+      ensureYouTube(s);
+      setStatus(s, s.ytPlaying ? "Play" : "Stop");
+      setCounter(s, 0);
+      const mute = q(s, "[data-vhs-action='mute']");
+      if (mute) mute.setAttribute("aria-pressed", s.ytMuted ? "true" : "false");
+    }
+
+    updateTrackUI(s);
+    screenSource(s);
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Screen: ik-ecran.js, profile "vhs". The local files go through its
+   * WebGL tape shader (the decoded <video> is the source); the YouTube
+   * catalogue, whose pixels cannot reach a shader, gets the DOM wear.
+   * ------------------------------------------------------------------ */
+
+  function mountScreen(s) {
+    const screen = q(s, "[data-vhs-screen]");
+    if (!screen || !window.IKEcran) return;
+    // A host that places the screen itself (the room TV of the motel, kave/tv.html) sets INSERTKOIN_VHS_CONFIG.layout = false.
+    if (window.IKEcran.layout && (window.INSERTKOIN_VHS_CONFIG || {}).layout !== false) s.layout = window.IKEcran.layout(s.root, { screen, controls: s.root.querySelector(".vhs-shell") });
+    s.ecran = window.IKEcran.mount(screen, {
+      program: "vhs",
+      canvas: s.canvas,
+      content: ".vhs-youtube",
+      zUnder: 4, // the wear stays under the boot snow (z 6) and the search bars (z 5)
+      lines: STANDARDS[s.standard].lines,
+      source: null,
+      state: () => ({ pause: !isPlaying(s), intensity: SPEED_INTENSITY[s.speed], std: STANDARDS[s.standard].std }),
+      onfallback: (off) => { if (!live(s) || s.source !== "local") return; if (off) enterFallback(s); else exitFallback(s); },
+    });
+  }
+
+  function screenSource(s) {
+    if (!live(s) || !s.ecran) return;
+    if (s.source === "local") {
+      const mode = s.ecran.setSource(s.video);
+      s.glOk = mode === "gl";
+      if (s.glOk) exitFallback(s); else enterFallback(s);
+    } else {
+      s.ecran.setSource(null);
+    }
+  }
+
+  function enterFallback(s) {
+    s.fallback = true;
+    s.root.dataset.gl = "off";
+    if (s.video) s.video.controls = true;
+    setMessage(s, "WebGL2 unavailable; showing the source video.");
+  }
+
+  function exitFallback(s) {
+    s.fallback = false;
+    s.root.dataset.gl = "on";
+    if (s.video) s.video.controls = false;
+    if (s.messageKey === "WebGL2 unavailable; showing the source video.") setMessage(s, "");
+  }
+
+  /* ------------------------------------------------------------------ *
+   * DOM wiring
+   * ------------------------------------------------------------------ */
+
+  function wireVideo(s) {
+    const video = s.video;
+    if (!video) return;
+
+    on(s, video, "play", () => { if (s.source === "local") setStatus(s, "Play"); });
+    on(s, video, "playing", () => { if (s.source === "local") setStatus(s, "Play"); });
+    on(s, video, "waiting", () => { if (s.source === "local") setStatus(s, "Load"); });
+    on(s, video, "pause", () => {
+      // Pausing media is part of the scan itself, never a reason to stop it.
+      if (s.source === "local" && !video.ended && !s.scanDir) setStatus(s, "Pause");
+      if (s.ecran) s.ecran.refresh();
+    });
+    on(s, video, "ended", () => {
+      if (s.source !== "local") return;
+      setStatus(s, "Stop");
+      if (s.localFiles.length > 1) step(s, 1);
+    });
+    on(s, video, "seeked", () => { if (s.ecran) s.ecran.refresh(); });
+    on(s, video, "loadedmetadata", () => {
+      if (s.ecran) s.ecran.refresh();
+    });
+    on(s, video, "timeupdate", () => {
+      if (s.source !== "local") return;
+      setCounter(s, video.currentTime);
+      if (Number.isFinite(video.duration) && video.duration > 0) {
+        setSeek(s, video.currentTime / video.duration);
+      }
+    });
+    on(s, video, "error", () => {
+      if (s.source !== "local" || !video.getAttribute("src")) return;
+      if (s.scanDir) return; // scrubbing past the end reads as an error
+      setMessage(s, "The local VHS file could not be played.");
+      setStatus(s, "Stop");
+    });
+
+    const slider = q(s, "[data-vhs-seek]");
+    if (slider) {
+      on(s, slider, "input", () => {
+        if (Number.isFinite(video.duration) && video.duration > 0) {
+          video.currentTime = (Number(slider.value) / 1000) * video.duration;
+        }
+        if (s.scanDir) stopScan(s);
+      });
+    }
+  }
+
+  function handleAction(s, action) {
+    if (action === "play" && s.root) s.root.classList.remove("is-fresh");
+    if (action === "play") { if (isPlaying(s)) VSND.key(); else VSND.thread(); }
+    else if (action === "eject") VSND.eject();
+    else VSND.key();
+    if (action === "prev") nudge(s, -1); // quick tap: rewind 5 s with noise
+    else if (action === "next") nudge(s, 1); // quick tap: forward 5 s
+    else if (action === "rew") startScan(s, -1); // keydown only: held REW
+    else if (action === "ffw") startScan(s, 1); // keydown only: held FFW
+    else if (action === "random") randomItem(s);
+    else if (action === "heart") toggleHeart(s);
+    else if (action === "play") togglePlay(s);
+    else if (action === "mute") toggleMute(s);
+    else if (action === "eject") ejectTape(s);
+    // 16 nov. 2026 (Mauk Tenieb, images du magnétoscope) : les touches de la façade photographiée
+    else if (action === "power") close();
+    else if (action === "stop") stopTape(s);
+    else if (action === "pause") { if (isPlaying(s)) togglePlay(s); }
+    else if (action === "fine") step(s, 1);
+    else if (action === "rec") recBay(s);
+    else if (action === "shelf") shelfBay(s);
+  }
+
+  /* 16 nov. 2026 (Mauk Tenieb, images du magnétoscope) : ■ arrête la bande et la rembobine au début */
+  function stopTape(s) {
+    if (s.source === "youtube") {
+      if (s.player && s.playerReady) { try { s.player.pauseVideo(); s.player.seekTo(0, true); } catch (_) { /* ignore */ } }
+    } else if (s.video) {
+      try { s.video.pause(); s.video.currentTime = 0; } catch (_) { /* ignore */ }
+    }
+    setCounter(s, 0);
+    setSeek(s, 0);
+    setStatus(s, "Stop");
+    setTimeout(() => { if (live(s) && !isPlaying(s)) setStatus(s, "Stop"); }, 400);
+  }
+  /* ● REC mène à la baie d'enregistrement ; avec une adresse déjà tapée, il enregistre */
+  function recBay(s) {
+    const input = q(s, "[data-vhs-rec-input]");
+    if (!input || !input.offsetParent) return;
+    if (input.value.trim()) { const b = q(s, "[data-vhs-rec-btn]"); if (b) b.click(); return; }
+    try {
+      if (!pageTo(s, q(s, "[data-vhs-rec]"))) input.scrollIntoView({ block: "center", behavior: "smooth" });
+      input.focus({ preventScroll: true });
+    } catch (_) { /* ignore */ }
+  }
+  /* la trappe mène à l'étagère : la cassette en cours vient sous le doigt */
+  function shelfBay(s) {
+    const row = q(s, "[data-vhs-shelf-row]");
+    if (!row || !row.offsetParent) return;
+    const cur = row.querySelector(".vhs-tape.is-active") || row.querySelector(".vhs-tape");
+    try {
+      if (!pageTo(s, q(s, "[data-vhs-shelf]"))) row.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      if (cur) row.scrollTo({ left: Math.max(0, cur.offsetLeft + cur.parentElement.offsetLeft - row.clientWidth / 2), behavior: "smooth" });
+    } catch (_) { /* ignore */ }
+  }
+
+  /* 16 nov. 2026, 2 h 15 (Mauk Tenieb : « Règle ça » — en paysage étroit, l'étagère et la recherche sortaient
+     à moitié de l'emplacement) : là, le catalogue se lit page par page sous la façade (étagère ; recherche et
+     liste ; baie REC). La loupe tourne la page jusqu'à la recherche, ● REC jusqu'à la baie, la trappe jusqu'à l'étagère. */
+  function pageTo(s, el) {
+    const cat = q(s, "[data-vhs-catalogue]");
+    if (!cat || !el || !/y/.test(getComputedStyle(cat).scrollSnapType || "")) return false;
+    s.paged = true;
+    cat.scrollTo({ top: cat.scrollTop + el.getBoundingClientRect().top - cat.getBoundingClientRect().top, behavior: s.reducedMotion ? "auto" : "smooth" });
+    return true;
+  }
+  function findBay(s) {
+    const input = q(s, "[data-vhs-find-input]");
+    if (!input || !input.offsetParent) return;
+    if (!pageTo(s, q(s, "[data-vhs-find]"))) { try { input.scrollIntoView({ block: "center", behavior: "smooth" }); } catch (_) { /* ignore */ } }
+    if (window.matchMedia && window.matchMedia("(pointer: fine)").matches) { try { input.focus({ preventScroll: true }); } catch (_) { /* ignore */ } }
+  }
+
+  function onRootClick(s, event) {
+    if (s.suppressClick) return; // end of a held REW / FFW scan
+    const button = event.target.closest && event.target.closest("button");
+    if (!button || !s.root.contains(button)) return;
+
+    if (button.dataset.vhsAction) {
+      handleAction(s, button.dataset.vhsAction);
+    } else if (button.dataset.vhsFindOpen !== undefined) {
+      VSND.key();
+      findBay(s);
+    } else if (button.dataset.vhsSource) {
+      setSource(s, button.dataset.vhsSource);
+    } else if (button.dataset.vhsTrack !== undefined) {
+      selectTrack(s, Number(button.dataset.vhsTrack), true);
+    } else if (button.dataset.vhsLocalItem !== undefined) {
+      selectLocal(s, Number(button.dataset.vhsLocalItem), true);
+    }
+  }
+
+  function onRootKeydown(s, event) {
+    if (!live(s) || event.defaultPrevented) return;
+    if (event.ctrlKey || event.metaKey || event.altKey) return; // never hijack browser shortcuts
+
+    const tag = event.target && event.target.tagName;
+    const editable = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" ||
+      (event.target && event.target.isContentEditable);
+    const interactive = editable || tag === "BUTTON" || tag === "A";
+    const key = event.key;
+
+    // Sliders and text fields keep their own arrow / letter keys.
+    if (editable) return;
+
+    // Space and Enter on a focused button must keep activating that button.
+    if (key === " " || key === "Spacebar") {
+      if (interactive) return;
+      event.preventDefault();
+      togglePlay(s);
+    } else if (key === "ArrowLeft") {
+      event.preventDefault();
+      // Hold to scrub the tape (REW); a quick tap nudges 5 s back with
+      // noise (decided in the keyup branch).
+      s.scanHeld = true;
+      if (!s.scanDir) startScan(s, -1);
+    } else if (key === "ArrowRight") {
+      event.preventDefault();
+      s.scanHeld = true;
+      if (!s.scanDir) startScan(s, 1);
+    } else if (key === "r" || key === "R") {
+      randomItem(s);
+    } else if (key === "m" || key === "M") {
+      toggleMute(s);
+    }
+    // Escape is left to the host page: the loader's Baku Boom / BACK owns it.
+  }
+
+  function pauseAllMedia(s) {
+    if (s.video && !s.video.paused) s.video.pause();
+    pauseYouTube(s);
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Cassette boot: random snow burst, then the tape slides in. Skippable
+   * with any key/click; skipped entirely under reduced motion.
+   * ------------------------------------------------------------------ */
+
+  let bootState = null; // {done, timer, onDone}
+
+  function endBoot(s, delay) {
+    if (bootState && bootState.timer) clearTimeout(bootState.timer);
+    if (bootState && bootState.onDone) {
+      const fn = bootState.onDone;
+      if (delay) bootState.timer = setTimeout(fn, delay);
+      else { bootState = null; fn(); }
+    } else {
+      bootState = null;
+    }
+    const root = s && s.root;
+    if (root) {
+      const boot = root.querySelector("[data-vhs-boot]");
+      if (boot) {
+        boot.classList.add("is-inserting");
+        setTimeout(() => { boot.remove(); }, 650);
+      }
+      root.classList.remove("is-booting");
+    }
+  }
+
+  /* 16 nov. 2026 (Mauk Tenieb : « la neige à l'écran pour la lecture d'une cassette est dégueulasse ») :
+     vraie neige analogique, grain aléatoire à chaque image, bande de synchro qui roule, éclairs de luminance ; s'arrête avec la séquence */
+  function snowCanvas(boot) {
+    const host = boot.querySelector(".vhs-boot-snow");
+    if (!host || host.querySelector("canvas")) return;
+    const cv = document.createElement("canvas");
+    const W = 220, H = 166;
+    cv.width = W; cv.height = H;
+    host.appendChild(cv);
+    const g = cv.getContext("2d", { alpha: false });
+    const img = g.createImageData(W, H), d = img.data;
+    let band = Math.random() * H, last = 0;
+    const tick = (t) => {
+      if (!cv.isConnected) return;
+      if (t - last > 33) {
+        last = t;
+        band = (band + 3 + Math.random() * 4) % (H + 30);
+        const flash = Math.random() < 0.06 ? 40 : 0;
+        for (let y = 0; y < H; y++) {
+          const db = Math.abs(y - band) < 9 ? 55 : 0;
+          const tear = Math.random() < 0.015 ? (Math.random() * 60) | 0 : 0;
+          for (let x = 0; x < W; x++) {
+            const v = Math.min(255, (Math.random() * Math.random() * 360 + db + flash + (x < tear ? 80 : 0)) | 0);
+            const i = (y * W + x) << 2;
+            d[i] = d[i + 1] = d[i + 2] = v; d[i + 3] = 255;
+          }
+        }
+        g.putImageData(img, 0, 0);
+      }
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }
+
+  function startBoot(s, onDone) {
+    if (s.reducedMotion || !s.root) { onDone(); return; }
+    const boot = s.root.querySelector("[data-vhs-boot]");
+    if (!boot) { onDone(); return; }
+    bootState = { done: false, timer: 0, onDone: onDone };
+    s.root.classList.add("is-booting");
+    VSND.load();
+
+    // Random snow duration: the deck takes its time to lock on.
+    const snowMs = 350 + Math.floor(Math.random() * 850);
+    boot.dataset.snow = String(snowMs);
+    boot.style.setProperty("--snow-ms", snowMs + "ms");
+    snowCanvas(boot);
+
+    const skip = (event) => {
+      if (bootState && !bootState.done) endBoot(s, 120);
+      else endBoot(s, 0);
+    };
+    s.root.addEventListener("keydown", skip, { once: true });
+    s.root.addEventListener("pointerdown", skip, { once: true });
+
+    bootState.timer = setTimeout(() => endBoot(s, 0), snowMs + 1050);
+  }
+
+  function bootStage(s, stage) {
+    const boot = s.root && s.root.querySelector("[data-vhs-boot]");
+    if (boot) boot.dataset.stage = stage;
+  }
+
+  function observe(s) {
+    // 1. Root removed from the document (loader closes by hiding nodes).
+    if (typeof MutationObserver === "function") {
+      const removal = new MutationObserver(() => {
+        if (live(s) && !s.root.isConnected) close();
+      });
+      removal.observe(document.documentElement, { childList: true, subtree: true });
+      s.cleanups.push(() => removal.disconnect());
+
+      // 2. Live language switch (the layer i18n rewrites text nodes; the
+      //    statuses here are re-rendered from the keys, so they follow too).
+      const language = new MutationObserver(() => { if (live(s)) applyI18n(s); });
+      language.observe(document.documentElement, { attributes: true, attributeFilter: ["lang"] });
+      s.cleanups.push(() => language.disconnect());
+    }
+
+    // 4. 16 nov. 2026, 2 h 15 (Mauk Tenieb : « Règle ça ») : en paysage étroit, le catalogue page par page
+    //    s'ouvre sur l'étagère tant que le visiteur ne l'a pas tourné (l'étagère paraît après le reste).
+    const cat = q(s, "[data-vhs-catalogue]");
+    if (cat && typeof ResizeObserver === "function") {
+      const toShelf = () => {
+        const shelf = q(s, "[data-vhs-shelf]");
+        if (live(s) && !s.paged && shelf && !shelf.hidden && /y/.test(getComputedStyle(cat).scrollSnapType || "")) cat.scrollTop = 0;
+      };
+      const ro = new ResizeObserver(toShelf);
+      ro.observe(cat);
+      const shelf = q(s, "[data-vhs-shelf]");
+      if (shelf) ro.observe(shelf);
+      s.cleanups.push(() => ro.disconnect());
+      ["pointerdown", "wheel", "focusin"].forEach((type) => on(s, cat, type, () => { s.paged = true; }, { passive: true }));
+    }
+
+    // 3. Screen size changes: ik-ecran.js watches the screen itself.
+
+    // 4. Root hidden but not removed (loader hides the layer): stop everything.
+    if (typeof IntersectionObserver === "function") {
+      const visibility = new IntersectionObserver((entries) => {
+        if (!live(s)) return;
+        const entry = entries[entries.length - 1];
+        const visible = !!entry.isIntersecting;
+        if (visible === s.rootVisible) return;
+        s.rootVisible = visible;
+        if (!visible) pauseAllMedia(s);
+      });
+      visibility.observe(s.root);
+      s.cleanups.push(() => visibility.disconnect());
+    }
+
+    // 5. Tab visibility: ik-ecran.js draws nothing for a hidden tab.
+
+    // 6. prefers-reduced-motion, live.
+    if (window.matchMedia) {
+      const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+      const onChange = () => {
+        if (!live(s)) return;
+        s.reducedMotion = mq.matches;
+        s.root.classList.toggle("is-reduced-motion", mq.matches);
+      };
+      if (mq.addEventListener) {
+        mq.addEventListener("change", onChange);
+        s.cleanups.push(() => mq.removeEventListener("change", onChange));
+      } else if (mq.addListener) {
+        mq.addListener(onChange);
+        s.cleanups.push(() => mq.removeListener(onChange));
+      }
+    }
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Lifecycle
+   * ------------------------------------------------------------------ */
+
+  function readConfig() {
+    const c = window.INSERTKOIN_VHS_CONFIG || {};
+    const legacy = window.INSERTKOIN_VHS_FILES;
+    return {
+      standard: c.standard === "NTSC" ? "NTSC" : "PAL",
+      source: c.source === "local" || c.source === "youtube" ? c.source : null,
+      files: Array.isArray(c.files) ? c.files : (Array.isArray(legacy) ? legacy : []),
+      noCookie: c.youtubeNoCookie !== false,
+    };
+  }
+
+  function init(root) {
+    const s = makeState();
+    state = s;
+    s.root = root;
+    s.destroyed = false;
+
+    // The loader watches the panel's visibility but never shows it: like the
+    // other panels, the cabinet slides itself in (and back out on close).
+    root.classList.add("open");
+    root.style.pointerEvents = ""; // close() set it only for the slide-out
+    s.opened = true;
+
+    const cfg = readConfig();
+    s.standard = cfg.standard;
+    s.noCookie = cfg.noCookie;
+    s.video = q(s, "[data-vhs-video]");
+    s.canvas = q(s, "[data-vhs-canvas]");
+    s.reducedMotion = !!(window.matchMedia &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+    root.classList.toggle("is-reduced-motion", s.reducedMotion);
+    mountScreen(s);
+
+    // The KG layer is 0x0 with touch-action:none (the canvas games need that).
+    // The VHS panel scrolls, so give the layer back its touch panning while the
+    // cabinet is open; the stylesheet rule restores it on close.
+    const layer = root.closest ? root.closest(".kg-layer") : null;
+    if (layer && !layer.style.touchAction) {
+      layer.style.touchAction = "auto";
+      s.layerTouch = layer;
+    }
+
+    normaliseTracks(s);
+    normaliseFiles(s, cfg.files);
+    renderLists(s);
+
+    applyI18n(s);
+
+    on(s, root, "click", (event) => onRootClick(s, event));
+    on(s, root, "keydown", (event) => onRootKeydown(s, event));
+
+    // Releasing a held arrow stops the picture search. A quick tap falls
+    // back to the classic behaviour: jump to the previous / next track.
+    on(s, root, "keyup", (event) => {
+      if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+      if (!s.scanHeld) return;
+      s.scanHeld = false;
+      const dir = s.scanDir;
+      const heldLong = dir && performance.now() - (s.scanStartT || 0) > 350;
+      if (dir) stopScan(s);
+      if (dir && !heldLong) nudge(s, dir); // quick tap: tape nudge ±5 s
+    });
+
+    // Hold the deck's REW / FFW buttons for a picture search; a quick
+    // tap nudges the tape ±5 s with a burst of noise.
+    // REW / FFW: a tap nudges ±5 s; keeping the button held keeps pulling
+    // the tape in the same direction (another 5 s, then 10, 10, 15…), the
+    // noise shielding the jumps — like a deck that rewinds faster while
+    // you hold the key down.
+    ["prev", "next"].forEach((name) => {
+      const button = q(s, "[data-vhs-action='" + name + "']");
+      if (!button) return;
+      const scanDir = name === "prev" ? -1 : 1;
+      s.holdNudge = s.holdNudge || {};
+      const hold = s.holdNudge;
+      hold[scanDir] = { step: 5, repeat: 0, timer: 0, pull: 0, wasHolding: false };
+      const stopHold = () => {
+        const h = hold[scanDir];
+        if (h.timer) { clearTimeout(h.timer); h.timer = 0; }
+        if (h.pull) { clearInterval(h.pull); h.pull = 0; }
+        h.step = 5; h.repeat = 0;
+      };
+      const release = () => {
+        const h = hold[scanDir];
+        const held = h.wasHolding;
+        stopHold();
+        h.wasHolding = false;
+        if (held) {
+          // End of a hold: swallow the click so the finger lift does not
+          // add one spurious extra nudge on top of the pulled tape.
+          s.suppressClick = true;
+          setTimeout(() => { s.suppressClick = false; }, 0);
+        } else if (s.scanDir === scanDir) {
+          stopScan(s);
+          s.suppressClick = true;
+          setTimeout(() => { s.suppressClick = false; }, 0);
+        }
+      };
+      on(s, button, "pointerdown", () => {
+        const h = hold[scanDir];
+        if (h.timer || h.pull) return; // already holding
+        // Fast pull reactive on double-click or on third tap.
+        h.timer = setTimeout(() => {
+          h.timer = 0;
+          // Key still down after 900 ms: keep pulling the tape.
+          h.wasHolding = true;
+          nudge(s, scanDir, h.step);
+          h.pull = setInterval(() => {
+            if (h.repeat % 2 === 1) h.step = Math.min(30, h.step + 5);
+            h.repeat++;
+            nudge(s, scanDir, h.step);
+          }, 700);
+        }, 900);
+      });
+      on(s, button, "pointerup", release);
+      on(s, button, "pointerleave", release);
+      on(s, button, "pointercancel", release);
+    });
+    wireVideo(s);
+    observe(s);
+
+    // Files-first when masters exist (they are the only ones that get the
+    // VHS treatment); otherwise the catalogue.
+    const initial = cfg.source || (s.localFiles.length ? "local" : "youtube");
+    setSource(s, initial);
+
+    // Cassette boot: random snow burst, then the tape slides in. The panels
+    // underneath stay usable: the overlay only covers the screen area.
+    startBoot(s, () => {});
+    faceInit(s);
+
+    try { root.focus({ preventScroll: true }); } catch (_) { /* ignore */ }
+    window.dispatchEvent(new CustomEvent("kg-vhs:open"));
+  }
+
+  /* 16 nov. 2026 (Mauk Tenieb, images du magnétoscope) : la façade photographiée s'ouvre sur ses touches ;
+     la molette de la souris la fait glisser de côté ; les molettes TRACKING et FINE tournent d'un cran à chaque appui */
+  function faceInit(s) {
+    const face = q(s, "[data-vhs-face]");
+    segDraw(s, 0);
+    if (s.root) s.root.setAttribute("data-vhs-state", String(s.status || "Stop").toLowerCase());
+    if (!face) return;
+    const home = () => {
+      const h = face.querySelector(".vhs-face-home");
+      if (!h || !face.clientWidth) return;
+      face.scrollLeft = Math.max(0, h.offsetLeft - face.clientWidth / 2);
+    };
+    home();
+    requestAnimationFrame(home);
+    setTimeout(home, 400);
+    if (window.ResizeObserver) {
+      const ro = new ResizeObserver(home);
+      ro.observe(face);
+      s.cleanups.push(() => ro.disconnect());
+    }
+    on(s, face, "wheel", (e) => {
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+      const max = face.scrollWidth - face.clientWidth;
+      if (max < 2) return;
+      const next = face.scrollLeft + e.deltaY;
+      if ((e.deltaY < 0 && face.scrollLeft <= 0) || (e.deltaY > 0 && face.scrollLeft >= max - 1)) return;
+      e.preventDefault();
+      face.scrollLeft = Math.max(0, Math.min(max, next));
+    }, { passive: false });
+    qa(s, ".vhs-knob").forEach((k) => {
+      on(s, k, "click", () => {
+        const r = (parseFloat(k.style.getPropertyValue("--rot")) || 0) + 30 + Math.round(Math.random() * 40);
+        k.style.setProperty("--rot", r + "deg");
+      });
+    });
+  }
+
+  function tryOpen() {
+    const root = document.querySelector(ROOT_SELECTOR);
+    if (!root) return false;
+    // The loader re-runs the entry on every open: restart cleanly so a
+    // reopen always replays the intro with fresh state.
+    if (!state.destroyed) close();
+    init(root);
+    return true;
+  }
+
+  function open() {
+    cancelAnimationFrame(retryRaf);
+    if (tryOpen()) return true;
+
+    // The loader may call us a tick before the fragment is in the DOM.
+    let tries = 0;
+    const tick = () => {
+      if (tryOpen() || ++tries > 120) return;
+      retryRaf = requestAnimationFrame(tick);
+    };
+    retryRaf = requestAnimationFrame(tick);
+    return false;
+  }
+
+  /* 16 nov. 2026 (Mauk Tenieb, « Evidemment. Continue. ») : EJECT fait sortir la cassette photographiée, titre au feutre, avant de refermer */
+  let ejecting = false;
+  function ejectTape(s) {
+    const screen = s.root && q(s, "[data-vhs-screen]");
+    if (ejecting) return;
+    if (!screen || s.reducedMotion) { close(); return; }
+    ejecting = true;
+    const l = s.root.querySelector(".vhs-face .vhs-label");
+    const t = ((l && l.textContent) || "").replace(/^\s*\d+\s*\/\s*\d+\s*[\u2014\u2013-]\s*/, "").trim();
+    const n = document.createElement("div"); n.className = "vhs-boot-name vhs-eject"; n.setAttribute("aria-hidden", "true");
+    const i = document.createElement("i"); i.textContent = t; n.appendChild(i); screen.appendChild(n);
+    if (window.KGVHSFitName) window.KGVHSFitName(n);
+    setTimeout(() => { ejecting = false; n.remove(); close(); }, 700);
+  }
+
+  function close() {
+    cancelAnimationFrame(retryRaf);
+    const s = state;
+    if (s.destroyed) return;
+    if (bootState) { clearTimeout(bootState.timer); bootState = null; }
+    if (s.scanTimer) { clearTimeout(s.scanTimer); s.scanTimer = 0; }
+    if (s.nudgeTimer) { clearTimeout(s.nudgeTimer); s.nudgeTimer = 0; }
+    if (s.holdNudge) { Object.values(s.holdNudge).forEach((h) => { if (h.timer) clearTimeout(h.timer); if (h.pull) clearInterval(h.pull); }); }
+    s.scanDir = 0;
+    s.scanHeld = false;
+    s.destroyed = true;
+
+    if (s.root && s.root.classList) {
+      s.root.classList.remove("open"); // slide back out (CSS transition)
+      s.root.style.pointerEvents = "none"; // nothing clickable during the slide
+    }
+
+    window.dispatchEvent(new CustomEvent("kg-vhs:eject"));
+    VSND.whirStop();
+    s.cleanups.splice(0).forEach((fn) => { try { fn(); } catch (_) { /* ignore */ } });
+    destroyPlayer(s);
+
+    if (s.video) {
+      try { s.video.pause(); } catch (_) { /* ignore */ }
+      s.video.removeAttribute("src");
+      try { s.video.load(); } catch (_) { /* ignore */ }
+    }
+
+    // The screen sleeps (GL objects released, context kept): the panel and its
+    // canvas survive a close and the next open wakes the same screen.
+    if (s.ecran) s.ecran.sleep();
+    if (s.layerTouch) {
+      s.layerTouch.style.touchAction = "";
+      s.layerTouch = null;
+    }
+    state = makeState();
+    window.dispatchEvent(new CustomEvent("kg-vhs:close"));
+  }
+
+  function debug() {
+    const s = state;
+    return {
+      version: VERSION,
+      open: !s.destroyed,
+      source: s.source,
+      standard: s.standard,
+      speed: s.speed,
+      status: s.status,
+      gl: !!(s.ecran && s.ecran.mode === "gl"),
+      glOk: s.glOk,
+      fallback: s.fallback,
+      screen: s.ecran ? s.ecran.debug() : null,
+      player: !!s.player,
+      playerReady: s.playerReady,
+      tracks: s.tracks.length,
+      localFiles: s.localFiles.length,
+      localIndex: s.localIndex,
+      trackIndex: s.trackIndex,
+      intensity: s.destroyed ? null : effectiveIntensity(s),
+      reducedMotion: s.reducedMotion,
+      rootVisible: s.rootVisible,
+      playersCreatedTotal: counters.players,
+      apiScripts: document.querySelectorAll('script[src="' + YT_API + '"]').length,
+      message: s.messageKey,
+    };
+  }
+
+  /* Re-read the catalogue (readTracks) and rebuild the tracklist — used by
+     the cassette library (kg-vhs-recorder.js) after a tape is selected or a
+     recording completes. Does not autoplay: the deck keeps its Stop state. */
+  function refreshTracks() {
+    const s = state;
+    if (s.destroyed) return -1;
+    const before = s.tracks.length ? s.tracks[0].id : null;
+    normaliseTracks(s);
+    renderLists(s);
+    s.trackIndex = 0;
+    updateTrackUI(s);
+    setCounter(s, 0);
+    // A new cassette: the deck ejects the old tape and cues the first track
+    // of the new one, so the screen never keeps the previous cassette.
+    if (s.source === "youtube" && s.tracks.length && s.tracks[0].id !== before) {
+      if (!bootState && !s.reducedMotion) {
+        const screen = q(s, "[data-vhs-screen]");
+        if (screen) {
+          screen.classList.remove("is-tape-swap");
+          void screen.offsetWidth;
+          screen.classList.add("is-tape-swap");
+          setTimeout(() => { if (live(s)) screen.classList.remove("is-tape-swap"); }, 900);
+        }
+      }
+      if (s.player && s.playerReady) { try { s.player.stopVideo(); } catch (_) { /* ignore */ } }
+      s.ytPlaying = false;
+      setStatus(s, "Stop");
+      selectTrack(s, 0, false);
+    }
+    return s.tracks.length;
+  }
+
+  // Cassette-library bridge: load (and play) the track whose video id we know,
+  // without touching the deck's own selection state otherwise.
+  function playByVideoId(videoId) {
+    const s = state;
+    if (s.destroyed || !videoId) return -1;
+    const idx = s.tracks.findIndex((t) => String(t.id) === String(videoId));
+    if (idx < 0) return -1;
+    selectTrack(s, idx, true);
+    return idx;
+  }
+
+  // Host TV bridge (kave/tv.html): the set's volume key, and the previous / next track.
+  function volume(v) {
+    hostVolume = Math.max(0, Math.min(100, Math.round(Number(v) || 0)));
+    const s = state;
+    if (s.player && s.playerReady) { try { s.player.setVolume(hostVolume); } catch (_) { /* ignore */ } }
+    if (s.video) s.video.volume = hostVolume / 100;
+    return hostVolume;
+  }
+  function stepTrack(delta) {
+    const s = state;
+    if (s.destroyed || !listLength(s)) return -1;
+    if (s.root) s.root.classList.remove("is-fresh");
+    step(s, delta < 0 ? -1 : 1);
+    return currentIndex(s);
+  }
+
+  window.KGVHS = { open, close, refreshTracks, playByVideoId, volume, step: stepTrack, debug, version: VERSION };
+
+  // Compatibility with the loader contract.
+  window.kgVhsOpen = open;
+  window.kgVhsClose = close;
+})();
+
+/* téléprompteur (A46) : au survol, au focus ou en lecture, une ligne qui déborde défile sur place */
+/* 16 nov. 2026 (Mauk Tenieb, images du magnétoscope) : l'étiquette de la cassette dans la trappe défile aussi quand elle déborde */
+(function(){function over(el){return el&&el.scrollWidth>el.clientWidth+2&&getComputedStyle(el).whiteSpace.indexOf('nowrap')===0}
+ function find(t){for(var el=t,i=0;el&&i<4;el=el.parentElement,i++){if(el.nodeType===1&&over(el))return el}return null}
+ function on(el){if(!el)return;var dx=el.scrollWidth-el.clientWidth+10;el.style.setProperty('--tpx',(-dx)+'px');el.style.setProperty('--tpt',Math.max(3,dx/35)+'s');el.classList.add('ik-tp-on')}
+ function off(el){if(el)el.classList.remove('ik-tp-on')}
+ document.addEventListener('pointerover',function(e){if(e.target.closest&&e.target.closest('#vhs'))on(find(e.target))},true);
+ document.addEventListener('pointerout',function(e){var el=find(e.target);if(el&&!el.contains(e.relatedTarget))off(el)},true);
+ document.addEventListener('focusin',function(e){if(e.target.closest&&e.target.closest('#vhs'))on(find(e.target))},true);
+ document.addEventListener('focusout',function(e){off(find(e.target))},true);
+ setInterval(function(){[].forEach.call(document.querySelectorAll('#vhs [aria-current="true"],#vhs .is-playing,#vhs .is-current,#vhs .vhs-face .vhs-label'),function(el){var x=over(el)?el:el.querySelector&&[].filter.call(el.querySelectorAll('*'),over)[0];if(x&&!x.classList.contains('ik-tp-on'))on(x)})},1500)})();
+/* 16 nov. 2026 (Mauk Tenieb, « Sois proactif ») : la cassette qui entre porte au feutre, sur son étiquette, le titre de la cassette chargée */
+addEventListener('kg-vhs:open',function(){setTimeout(function(){
+  var b=document.querySelector('#vhs [data-vhs-boot]'),l=document.querySelector('#vhs .vhs-face .vhs-label');if(!b||b.querySelector('.vhs-boot-name'))return;
+  var t=((l&&l.textContent)||'').replace(/^\s*\d+\s*\/\s*\d+\s*[—–-]\s*/,'').trim();if(!t)return;
+  var n=document.createElement('div');n.className='vhs-boot-name';n.setAttribute('aria-hidden','true');var i=document.createElement('i');i.textContent=t;n.appendChild(i);b.appendChild(n);fitName(n);},0);});
+/* le titre tient entier sur l'étiquette : la taille du feutre se règle au titre, sur deux ou trois lignes, plancher 7 px */
+function fitName(n){var i=n&&n.querySelector('i');if(!i)return;var f=Math.max(7,Math.round(n.clientHeight*.13));i.style.fontSize=f+'px';
+  while(f>7&&(i.scrollHeight>i.clientHeight+1||i.scrollWidth>i.clientWidth+1)){f-=.5;i.style.fontSize=f+'px';}}
+window.KGVHSFitName=fitName;

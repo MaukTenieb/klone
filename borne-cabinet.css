@@ -1,0 +1,1417 @@
+/* Borne Insert Koin (site d'essai) : la page d'Insert Koin, habillée en borne d'arcade, d'après le plan d'une vraie borne.
+   Un meuble ; un écran 4:3 aussi haut que la fenêtre le permet ; le toit, le fronton, le cadre, le panneau, la porte.
+   html[data-habit] : les matières (bois, plastique, chrome, laiton) ; html[data-mode=device] : la borne devient
+   l'appareil (VHS, Photofauna, Kapture, 3615), ses commandes à droite de l'écran, ou dessous sur téléphone. */
+html.borne{--wood:#2b1d14;--grain1:rgba(255,255,255,.035);--grain2:rgba(0,0,0,.18);--tmold:#8f1f1a;--bezel:#070606;--bezel-edge:#26221f;
+  --panel1:#2a2724;--panel2:#191715;--marq1:#f7d77a;--marq2:#e39a2c;--marq3:#7c3c12;--marq-ink:#2a0f05;--grille:#151311;--hole:rgba(0,0,0,.8);--lab:#e9e1cf;
+  --scrW:max(320px,min(calc(100vw - 80px),calc((100vh - 290px) * 4 / 3)));--ctl:min(calc(100vw - 80px),clamp(calc(var(--scrW) + 300px),calc(var(--scrW) / .7),calc(var(--scrW) + 460px)));
+  --gw:var(--scrW);--gh:calc(var(--scrW) * .75);--pad:clamp(6px,1.1vw,14px)}
+html.borne[data-mode=device]{--gw:var(--ctl)}
+html.borne[data-habit=minitel]{--wood:#e3dbc6;--grain1:rgba(0,0,0,.025);--grain2:rgba(0,0,0,.04);--tmold:#c9bfa6;--bezel:#cfc6ae;--bezel-edge:#a99e83;
+  --panel1:#d6cdb6;--panel2:#c2b89e;--marq1:#e2d9c1;--marq2:#d2c8ad;--marq3:#b3a88d;--marq-ink:#4a4036;--grille:#cfc5aa;--hole:rgba(60,52,40,.75);--lab:#2f2a22}
+html.borne[data-habit=vhs]{--wood:#5a3a22;--grain1:rgba(255,220,170,.06);--grain2:rgba(0,0,0,.2);--tmold:#a7a39b;--bezel:#141311;--bezel-edge:#a7a39b;
+  --panel1:#2b2a28;--panel2:#161514;--marq1:#e7e7e3;--marq2:#a9a8a3;--marq3:#6f6e6a;--marq-ink:#1d1c1b;--grille:#1a1612}
+html.borne[data-habit=fauneye]{--wood:#3a2416;--grain1:rgba(255,210,150,.05);--grain2:rgba(0,0,0,.22);--tmold:#b8892f;--bezel:#a57a2c;--bezel-edge:#e8cf8a;
+  --panel1:#4a2f1c;--panel2:#2a1a0e;--marq1:#f8efd6;--marq2:#e3d2a8;--marq3:#c8b07a;--marq-ink:#3a2416;--grille:#1c140e}
+html.borne[data-habit=photo]{--wood:#1c1c1e;--grain1:rgba(255,255,255,.03);--grain2:rgba(0,0,0,.3);--tmold:#3c3c40;--bezel:#0a0a0b;--bezel-edge:#4a4a50;
+  --panel1:#2a2a2e;--panel2:#141416;--marq1:#d9d9dc;--marq2:#9a9aa0;--marq3:#55555a;--marq-ink:#111;--grille:#111113}
+html.borne[data-habit=korong]{--tmold:#ffa726;--marq1:#ffe3a0;--marq2:#ffa726;--marq3:#7a3d06}
+
+html.borne,html.borne body{overflow-x:hidden}
+html.borne body{padding-inline:0}
+html.borne article.info{max-width:100%;overflow:hidden}
+html.borne .wrap{width:calc(var(--gw) + 56px);max-width:100vw;margin:0 auto;padding:0 0 18px!important;gap:0;box-sizing:border-box;
+  background-color:var(--wood);background-image:repeating-linear-gradient(92deg,var(--grain1) 0 2px,transparent 2px 7px),repeating-linear-gradient(88deg,var(--grain2) 0 1px,transparent 1px 13px);
+  border-left:8px solid var(--tmold);border-right:8px solid var(--tmold);box-shadow:0 30px 70px rgba(0,0,0,.75);
+  transition:width .75s cubic-bezier(.6,.05,.3,1),background-color .7s,border-color .7s}
+
+/* fronton : deux haut-parleurs, l'enseigne au centre */
+html.borne .bar{position:relative;top:auto;display:grid;align-items:stretch;background:none}
+html.borne .bar .dock{padding:10px;display:flex;flex-wrap:wrap;align-content:flex-end;justify-content:center;gap:8px;
+  background-color:var(--grille);background-image:radial-gradient(circle at center,var(--hole) 0 3.2px,transparent 3.7px);background-size:12px 12px;
+  box-shadow:inset 0 0 0 4px rgba(0,0,0,.4),inset 0 0 0 6px rgba(255,255,255,.05),inset 0 0 30px rgba(0,0,0,.5);transition:transform .12s}
+html.borne .bar .dock::before{content:"";flex:0 0 100%;height:0}
+html.borne .bar:has(#radio-note.on) .dock{animation:bspk .48s ease-in-out infinite alternate}
+html.borne .bar:has(#radio-note.on) .dock:last-of-type{animation-delay:.24s}
+@keyframes bspk{from{transform:scale(1)}to{transform:scale(1.012);box-shadow:inset 0 0 0 4px rgba(0,0,0,.4),inset 0 0 0 6px color-mix(in srgb,var(--pal-titre,var(--pal-titre,#ffe08a)) 12%,transparent),inset 0 0 40px rgba(0,0,0,.35)}}
+html.borne .bar .brand{grid-column:2;grid-row:1;border:0;cursor:pointer;
+  
+  background:radial-gradient(ellipse at 50% 55%,var(--marq1) 0%,var(--marq2) 45%,var(--marq3) 100%);box-shadow:inset 0 0 0 4px rgba(0,0,0,.35),inset 0 0 40px rgba(0,0,0,.3),0 0 28px rgba(255,190,90,.18);}
+html.borne .bar .dock:first-of-type{grid-column:1;grid-row:1}
+html.borne .bar .dock:last-of-type{grid-column:3;grid-row:1}
+html.borne .b-habit{display:block;font-family:"DM Mono",monospace;font-size:.62rem;letter-spacing:.28em;color:var(--marq-ink);opacity:.8;margin-top:2px;min-height:1em}
+html.borne .b-habit.tilt{font-family:"Bebas Neue",Impact,sans-serif;font-size:1.3rem;letter-spacing:.3em;color:#b8231a;opacity:1;animation:btilt .16s steps(2) infinite}
+@keyframes btilt{50%{opacity:.15}}
+
+/* l'écran */
+html.borne .b-screen{position:relative;width:max-content;max-width:100%;margin:0 auto;box-sizing:border-box;border-radius:24px;background:var(--bezel);padding:var(--pad);
+  box-shadow:inset 0 0 0 2px var(--bezel-edge),0 0 0 5px rgba(0,0,0,.55);transition:background .7s,border-radius .7s}
+html.borne .b-glass{position:relative;width:var(--gw);height:var(--gh);max-width:100%;border-radius:16px;overflow:hidden;background:#000;
+  transition:width .75s cubic-bezier(.6,.05,.3,1),height .75s cubic-bezier(.6,.05,.3,1),border-radius .7s}
+html.borne .b-glass::after{content:"";position:absolute;inset:0;z-index:40;pointer-events:none;border-radius:inherit;
+  }
+
+html.borne[data-habit=minitel] .b-screen{border-radius:30px}
+html.borne .b-attract{position:absolute;inset:0;z-index:1;cursor:zoom-in}
+html.borne .b-attract iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+html.borne .b-date{position:absolute;right:2.5%;bottom:3%;justify-items:end;z-index:30;display:grid;pointer-events:none;color:#ffe9a8;text-shadow:0 0 8px rgba(255,200,90,.6),0 2px 0 #000}
+
+html.borne .b-date i{font-style:normal;color:#bcd0f4}
+html.borne:not([data-habit=repos]) .b-attract{display:none}
+html.borne:not([data-habit=repos]) .b-date{visibility:hidden}
+
+/* passage d'un meuble à l'autre : l'écran se voile de lumière, les matières se fondent */
+html.borne .b-glass::before{content:"";position:absolute;inset:-20%;z-index:45;pointer-events:none;opacity:0;
+  background:radial-gradient(circle at 50% 50%,rgba(255,250,230,.95) 0,rgba(255,224,138,.55) 22%,rgba(140,180,255,.25) 45%,transparent 70%),
+  conic-gradient(from 0deg,transparent 0 10%,rgba(255,240,200,.35) 12%,transparent 14% 36%,rgba(200,220,255,.3) 38%,transparent 40% 62%,rgba(255,240,200,.35) 64%,transparent 66% 88%,rgba(200,220,255,.3) 90%,transparent 92%)}
+
+@keyframes bmorph{0%{opacity:0;transform:scale(.4) rotate(0)}40%{opacity:1;transform:scale(1) rotate(40deg)}100%{opacity:0;transform:scale(1.4) rotate(90deg)}}
+
+@keyframes bveil{40%{filter:blur(6px) brightness(1.8) saturate(.4)}}
+
+/* Baku Boom : la borne prend un coup de tilt, l'écran s'éteint comme un vieux tube, puis se rallume */
+html.borne .wrap.b-shake{animation:bshake .5s cubic-bezier(.36,.07,.19,.97)}
+@keyframes bshake{10%,90%{transform:translate(-2px,1px) rotate(-.3deg)}20%,80%{transform:translate(4px,-2px) rotate(.5deg)}30%,50%,70%{transform:translate(-7px,2px) rotate(-.8deg)}40%,60%{transform:translate(7px,-1px) rotate(.8deg)}}
+html.borne .b-glass.b-off>*{animation:boff .42s ease-in forwards}
+@keyframes boff{0%{transform:scale(1,1);filter:brightness(1)}55%{transform:scale(1,.006);filter:brightness(4)}100%{transform:scale(0,.006);filter:brightness(6)}}
+html.borne .b-glass.b-on>*{animation:bon .5s ease-out}
+@keyframes bon{0%{transform:scale(0,.006);filter:brightness(6)}45%{transform:scale(1,.006);filter:brightness(4)}100%{transform:scale(1,1);filter:brightness(1)}}
+
+/* chaque programme s'ouvre dans l'écran */
+html.borne .b-glass>#select,html.borne .b-glass>#game,html.borne .b-glass>#calque{position:absolute;inset:0;z-index:10;overflow:auto;background:var(--bg);margin:0}
+html.borne .b-glass>[hidden]{display:none!important}
+html.borne #calque .cbar{display:none}
+html.borne #calque .cframe{position:absolute;inset:0;height:auto;min-height:0;margin:0;border:0}
+html.borne #game{display:flex;flex-direction:column}
+html.borne #game .stage{flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center}
+html.borne #game .stage canvas#cv{max-width:100%;max-height:100%;width:auto;height:auto}
+html.borne #select .lobby{max-width:none}
+
+/* le panneau : #home reste affiché, ses cabinets devenus boutons d'arcade ; l'appareil le remplace */
+html.borne #home,html.borne #home[hidden]{display:block!important;position:relative;padding:0}
+html.borne #home .hero{display:none}
+html.borne .b-panel{position:relative;transition:opacity .4s}
+html.borne[data-mode=device] .b-panel .cabinets,html.borne[data-mode=device] .b-panel .b-sub{display:none!important}
+html.borne .b-panel .b-subgrid{display:grid}
+html.borne .b-panel .cabinets,html.borne .b-panel .b-subgrid{grid-template-columns:repeat(auto-fill,minmax(clamp(128px,14vw,170px),1fr));gap:12px;margin:0}
+
+
+html.borne .b-panel .cab:active{box-shadow:inset 0 0 0 3px var(--nc),inset 0 -4px 0 rgba(0,0,0,.45),0 2px 0 #0b0a09,0 0 24px color-mix(in srgb,var(--nc) 55%,transparent)}
+
+
+
+
+
+/* un groupe déplié : ses programmes prennent la place des cinq touches */
+html.borne .b-sub[hidden],html.borne .b-panel .cabinets[hidden]{display:none!important}
+html.borne .b-subbar{display:flex;align-items:center;gap:12px;margin:0 0 12px}
+html.borne .b-subbar b{font-family:"Bebas Neue",Impact,sans-serif;font-weight:400;font-size:1.5rem;letter-spacing:.08em;color:var(--lab)}
+html.borne .b-fold{width:44px;height:44px;border-radius:50%;border:0;cursor:pointer;background:radial-gradient(circle at 40% 32%,#fff3c4,#c9a84c 60%,#6b4e12);color:#2a1a04;font-size:1rem;box-shadow:0 3px 0 #0b0a09}
+html.borne .b-panel.b-unfold .b-sub .cab{animation:bunfold .45s cubic-bezier(.3,1.4,.5,1) backwards}
+html.borne .b-panel.b-unfold .b-sub .cab:nth-child(2){animation-delay:.05s}html.borne .b-panel.b-unfold .b-sub .cab:nth-child(3){animation-delay:.1s}
+html.borne .b-panel.b-unfold .b-sub .cab:nth-child(4){animation-delay:.15s}html.borne .b-panel.b-unfold .b-sub .cab:nth-child(5){animation-delay:.2s}
+@keyframes bunfold{from{opacity:0;transform:translateY(18px) scale(.9)}}
+html.borne .b-panel .b-group::after{content:"";position:absolute;right:10px;top:9px;z-index:2;width:6px;height:6px;border-radius:50%;background:var(--nc);box-shadow:10px 0 0 var(--nc),0 0 8px var(--nc),10px 0 8px var(--nc)}
+
+/* Bio et Burrows : en plein écran, par-dessus la borne */
+html.borne .b-full{position:fixed;inset:0;z-index:300;display:flex;flex-direction:column;background:#0b0908;animation:bfull .6s cubic-bezier(.6,.05,.3,1)}
+@keyframes bfull{0%{clip-path:inset(30% 20% 40% 20% round 24px);opacity:.2}100%{clip-path:inset(0 0 0 0 round 0);opacity:1}}
+html.borne .b-full.out{animation:bfullout .45s cubic-bezier(.6,.05,.3,1) forwards}
+@keyframes bfullout{to{clip-path:inset(30% 20% 40% 20% round 24px);opacity:0}}
+html.borne .b-full header{display:flex;align-items:center;gap:10px;padding:8px 12px;background:#14110e;border-bottom:1px solid #2a261c}
+html.borne .b-full header b{flex:1;font-family:"Bebas Neue",Impact,sans-serif;font-weight:400;font-size:1.4rem;letter-spacing:.08em;color:var(--pal-titre,#ffe08a)}
+html.borne .b-full header button{font-family:"DM Mono",monospace;font-size:.7rem;letter-spacing:.16em;color:#ece4d2;background:#221e18;border:1px solid #3a3428;padding:8px 12px;cursor:pointer}
+html.borne .b-full iframe{flex:1 1 auto;width:100%;border:0;background:#fff}
+html.borne .wrap.b-crushed{transform:scale(.94);filter:blur(3px) brightness(.5);transition:transform .5s,filter .5s}
+
+@media (prefers-reduced-motion:reduce){html.borne .b-glass,html.borne .wrap{transition:none}html.borne .b-morph .b-glass::before,html.borne .b-morph .b-glass>*{animation:none}}
+html.borne .b-dup{display:none!important}
+/* ---------- V3 : chaque chose à sa place de borne ---------- */
+/* le toit : une plante (le calendrier républicain), la caméra Kapture */
+html.borne .b-roof{display:flex;align-items:flex-end;justify-content:space-between;position:relative;z-index:2;width:calc(var(--gw) + 56px);max-width:100vw;margin:8px auto 0;box-sizing:border-box;
+  }
+html.borne .b-plant{filter:drop-shadow(0 4px 4px rgba(0,0,0,.5))}
+html.borne .b-cam{display:flex;align-items:flex-end}
+html.borne .b-cam #kapture{position:relative;padding:0;border:0;border-radius:7px 7px 3px 3px;cursor:pointer;color:transparent;
+  }
+html.borne .b-cam #kapture>*{display:none}
+html.borne .b-cam #kapture::before{content:"";position:absolute;left:50%;top:50%;width:18px;height:18px;margin:-9px 0 0 -9px;border-radius:50%;
+  background:radial-gradient(circle at 40% 35%,#6a7f9c 0 1.5px,#10161e 2.5px 5.5px,#050505 6px);box-shadow:0 0 0 2px #3a3a3c}
+html.borne .b-cam #kapture::after{content:"";position:absolute;width:3px;height:3px;border-radius:50%;background:#3a2422}
+html.borne .b-cam #kapture:hover::after,html.borne[data-habit=photo] .b-cam #kapture::after{background:#ff4a3a;box-shadow:0 0 5px #ff4a3a}
+
+/* le fronton, compact */
+html.borne .wrap{border-radius:14px 14px 6px 6px}
+
+
+
+
+/* le cadre de l'écran : Burrows au-dessus ; Mauk Tenieb et Lore dessous */
+html.borne .b-bezel{background:var(--bezel);display:flex;flex-direction:column;transition:background .7s}
+html.borne .b-bezel .b-screen{background:none;box-shadow:none;padding:0;border-radius:16px}
+html.borne .b-sticker{border:0;cursor:pointer;padding:0;font:inherit}
+html.borne .b-land{position:relative;display:block;width:100%;overflow:hidden;
+  background:#222 url(poster-800.webp) center 34%/cover no-repeat;}
+html.borne .b-land::before{content:"";position:absolute;inset:0;background:linear-gradient(100deg,rgba(255,255,255,.18),transparent 30%,transparent 70%,rgba(255,255,255,.1)),linear-gradient(90deg,rgba(0,0,0,.5),transparent 45%)}
+html.borne .b-land span{position:absolute;top:50%;transform:translateY(-50%);}
+html.borne .b-land:hover,html.borne .b-land:focus-visible{filter:saturate(1.1) contrast(1.1) brightness(1.08)}
+html.borne .b-bezelfoot{display:flex;}
+html.borne .b-badge{line-height:.86;transform:rotate(-1.5deg)}
+html.borne .b-badge b{font-weight:400;}
+html.borne .b-badge b+b{color:#1d1a16}
+html.borne .b-lore{text-decoration:none;font-family:"Bebas Neue",Impact,sans-serif;font-size:1.15rem;letter-spacing:.16em;
+  transform:rotate(2deg)}
+html.borne .b-badge:hover,html.borne .b-badge:focus-visible{transform:rotate(-1.5deg) scale(1.06)}
+html.borne .b-lore:hover,html.borne .b-lore:focus-visible{transform:rotate(2deg) scale(1.06)}
+
+/* à l'écran : les Koins en haut à gauche, la date en bas à droite */
+html.borne .b-glass #koins.b-credit{position:absolute;left:2.5%;top:3%;z-index:30;display:flex;align-items:center;gap:8px;pointer-events:none;background:none;border:0;padding:0;
+  font-family:"Press Start 2P",monospace;font-size:clamp(.55rem,1.1vw,.8rem);color:#ff9a3c;text-shadow:0 0 8px rgba(255,140,40,.6),0 2px 0 #000}
+html.borne .b-glass #koins.b-credit::before{content:"KOINS"}
+html.borne:not([data-habit=repos]) .b-glass #koins.b-credit{visibility:hidden}
+
+
+
+/* le panneau : la manette, quatre touches, Baku Boom ; dessous BC TL IG */
+
+html.borne .b-row1{align-items:center;gap:18px}
+html.borne .b-keys{flex:1;min-width:0}
+
+
+html.borne .b-stick{position:relative;flex:none;--x:0;--y:0}
+html.borne .b-stick::before{content:"";position:absolute;left:4px;right:4px;bottom:0;height:22px;border-radius:50%;background:radial-gradient(ellipse at 50% 40%,#3a3632,#0e0d0c 70%);box-shadow:0 3px 0 #070606}
+html.borne .b-stick i{position:absolute;margin-left:-4px;
+  }
+html.borne .b-stick i::after{content:"";position:absolute;left:50%;top:-14px;width:30px;height:30px;margin-left:-15px;border-radius:50%;
+  background:radial-gradient(circle at 38% 32%,#ff9a8a,#c8231a 55%,#5a0d08);box-shadow:inset 0 -3px 0 rgba(0,0,0,.3)}
+html.borne .b-boom{flex:none;display:flex;flex-direction:column;align-items:center;gap:6px;padding:0;border:0;background:none;cursor:pointer;color:var(--lab)}
+html.borne .b-boom i{display:block;
+  }
+html.borne .b-boom span{font-family:"DM Mono",monospace;font-size:.55rem;letter-spacing:.2em;opacity:.65;white-space:nowrap}
+html.borne .b-boom:hover i,html.borne .b-boom:focus-visible i{background:radial-gradient(circle at 40% 32%,#c4553f,#7a1e14 60%,#3a0c08)}
+html.borne .b-boom:active i{box-shadow:inset 0 -1px 0 rgba(0,0,0,.4),0 0 0 4px rgba(0,0,0,.45),0 0 18px rgba(255,80,50,.6)}
+html.borne .b-row2{display:flex;align-items:center;gap:18px;}
+html.borne .b-panel .menu{display:flex;gap:20px;margin:0}
+html.borne .b-panel .menu a,html.borne .b-panel .menu button{position:relative;display:inline-block;border:0;padding:40px 0 0;background:none;text-align:center;text-decoration:none}
+html.borne .b-panel .menu a::before,html.borne .b-panel .menu button::before{content:"";position:absolute;top:0;left:50%;border-radius:50%;
+  background:radial-gradient(circle at 40% 32%,color-mix(in srgb,var(--mc,#c9a84c) 40%,#fff),var(--mc,#c9a84c) 55%,color-mix(in srgb,var(--mc,#c9a84c) 55%,#000));
+  box-shadow:inset 0 -3px 0 rgba(0,0,0,.35),0 3px 0 #0b0a09}
+html.borne .b-panel .menu a:active::before{transform:translateY(2px)}
+html.borne .b-panel .menu svg{display:none}
+
+html.borne[data-mode=device] .b-stick{display:none}
+
+/* la porte : la fente, le son, la langue */
+html.borne .b-door{gap:16px;border-radius:7px;
+  background-image:repeating-linear-gradient(90deg,rgba(255,255,255,.05) 0 1px,transparent 1px 3px),linear-gradient(180deg,#9b9790,#6d6a64 60%,#58554f);}
+html.borne .b-slot{display:flex;flex-direction:column;align-items:center;gap:7px;padding:10px 14px;border:0;border-radius:5px;cursor:pointer;background:#171513;box-shadow:inset 0 0 0 3px #4a4640;overflow:visible}
+html.borne .b-slot b{font-weight:400;font-family:"Press Start 2P",monospace;}
+html.borne .b-slot em{font-style:normal;color:#ff9a3c}
+html.borne .b-slot u{text-decoration:none;display:inline-block;color:#7fe0ff;text-shadow:0 0 8px rgba(110,210,255,.6)}
+html.borne .b-slot u.flip{animation:bflip .35s ease-out}
+@keyframes bflip{0%{transform:rotateX(90deg);opacity:0}100%{transform:none;opacity:1}}
+html.borne .b-slot i{display:block;width:6px;height:28px;border-radius:3px;background:#000;box-shadow:0 0 0 2px #77736c,0 0 8px rgba(255,140,60,.35)}
+html.borne .b-slot:hover i{box-shadow:0 0 0 2px #9a958c,0 0 14px rgba(255,140,60,.75)}
+html.borne .b-coin{position:absolute;left:50%;top:-30px;width:22px;height:22px;margin-left:-11px;border-radius:50%;pointer-events:none;
+  animation:bcoin .55s cubic-bezier(.5,0,.8,.4) forwards}
+@keyframes bcoin{60%{transform:translateY(56px) scaleX(.25)}100%{transform:translateY(64px) scaleX(.15);opacity:0}}
+html.borne .b-knobs{display:flex;}
+html.borne .b-knobw{display:flex;flex-direction:column;align-items:center;}
+html.borne .b-knob{min-width:0!important;padding:0!important;border:0!important;border-radius:50%!important;cursor:pointer;font-size:0!important;color:transparent!important;
+  }
+html.borne .b-knob::after{content:"";position:absolute;left:50%;width:3px;margin-left:-1.5px;border-radius:2px;background:#e8e2d6;transform:rotate(-45deg);transition:transform .25s}
+html.borne .b-knob[data-on="1"]::after{transform:rotate(45deg);background:#ffd54f}
+html.borne .b-knoblab{white-space:nowrap}
+html.borne .b-door #kal{display:none}
+
+@media (max-width:700px){
+  html.borne{--scrW:calc(100vw - 36px)}
+  html.borne[data-mode=device]{--gw:var(--scrW);--gh:calc(var(--scrW) * .75 + 520px)}
+  html.borne .wrap{border-left-width:4px;border-right-width:4px;width:100%;margin:0}
+  
+  html.borne .bar .brand{grid-column:1;grid-row:1;}
+  html.borne .bar .dock:first-of-type{grid-column:1;grid-row:2;flex-wrap:nowrap;justify-content:space-between}
+  
+  html.borne .bar .dock:last-of-type{display:none}
+  html.borne .b-roof{width:100%;}
+  
+  html.borne .b-stick{display:none}
+  html.borne .b-row1{flex-wrap:wrap;gap:12px}
+  html.borne .b-keys{flex:1 1 100%}
+  html.borne .b-panel .b-subgrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  html.borne .b-boom{order:3;margin-left:auto;flex-direction:row}
+}
+
+/* la plante : au survol, de quoi l'entretenir */
+
+html.borne .b-pot{position:relative;display:flex;align-items:flex-end;outline:0;cursor:pointer}
+
+html.borne .b-care{position:absolute;left:100%;bottom:6px;display:flex;gap:6px;margin-left:4px;opacity:0;transform:translateX(-8px);pointer-events:none;transition:opacity .2s,transform .2s}
+html.borne .b-pot:hover .b-care,html.borne .b-pot:focus-within .b-care,html.borne .b-pot.open .b-care{opacity:1;transform:none;pointer-events:auto}
+html.borne .b-care button{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0 5px;border:0;cursor:pointer;}
+html.borne .b-care button i{font-style:normal;font-size:17px;line-height:1}
+
+
+html.borne .b-pot.fx-water .b-plant{animation:bwater .8s ease-out}
+@keyframes bwater{30%{filter:drop-shadow(0 0 10px rgba(120,190,255,.9)) brightness(1.1)}}
+html.borne .b-pot.fx-sun .b-plant{animation:bsun 1s ease-out}
+@keyframes bsun{30%{filter:drop-shadow(0 0 16px rgba(255,220,110,.95)) brightness(1.25)}}
+html.borne .b-pot.fx-cut .b-plant{animation:bcut .3s steps(3)}
+@keyframes bcut{50%{transform:translateX(2px) rotate(2deg)}}
+
+/* les skins du meuble (bouton SKIN de la porte) : bois, métal, jeu électromécanique des années 1960 ; les appareils gardent leur habit */
+html.borne[data-skin=metal][data-mode=arcade]:not([data-habit=fauneye]){--wood:#5d6166;--grain1:rgba(255,255,255,.07);--grain2:rgba(0,0,0,.12);--tmold:#b8bcc2;--bezel:#0c0d0e;--bezel-edge:#6a6e74;
+  --panel1:#3a3d41;--panel2:#1f2124;--marq1:#e8f4ff;--marq2:#7fb4e0;--marq3:#1f3d5c;--marq-ink:#0a1622;--grille:#1a1c1e;--lab:#e4e8ec}
+html.borne[data-skin=metal][data-mode=arcade]:not([data-habit=fauneye]) .wrap{background-image:repeating-linear-gradient(90deg,var(--grain1) 0 1px,transparent 1px 3px),linear-gradient(180deg,#7a7e84,#4a4d52 50%,#5d6166);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.12),0 30px 70px rgba(0,0,0,.75)}
+html.borne[data-skin="1960"][data-mode=arcade]:not([data-habit=fauneye]){--wood:#e8dcc2;--grain1:rgba(180,40,30,.09);--grain2:rgba(0,0,0,.03);--tmold:#c9ccd0;--bezel:#141a1c;--bezel-edge:#c9ccd0;
+  --panel1:#2a6f6a;--panel2:#1a4a47;--marq1:#fff6d8;--marq2:#ff6b4a;--marq3:#8a1c12;--marq-ink:#fff6d8;--grille:#2a2420;--lab:#fff6d8}
+html.borne[data-skin="1960"][data-mode=arcade]:not([data-habit=fauneye]) .wrap{background-image:radial-gradient(circle at 20% 30%,var(--grain1) 0 2px,transparent 3px),radial-gradient(circle at 70% 70%,rgba(30,110,105,.1) 0 2px,transparent 3px),
+  repeating-conic-gradient(from 0deg at 50% 18%,rgba(255,107,74,.08) 0 6deg,transparent 6deg 12deg);background-size:26px 26px,34px 34px,auto;border-left-width:10px;border-right-width:10px}
+html.borne[data-skin="1960"][data-mode=arcade]:not([data-habit=fauneye]) .bar .brand{text-shadow:0 0 12px rgba(255,240,200,.9),0 2px 0 #8a1c12}
+html.borne .b-skin::after{transform:rotate(calc(-60deg + var(--p,0) * 60deg))!important;background:#e8e2d6!important}
+html.borne .b-skin[data-pos="1"]{--p:1}html.borne .b-skin[data-pos="2"]{--p:2}
+/* Motel Sound : la cloche barrée dit que le haut-parleur est coupé ; les haut-parleurs vibrent seulement le son ouvert */
+html.borne .bar:has(.b-bell:not(.on)) .dock{animation:none!important}
+html.borne .b-bell{padding:0;border:0;border-radius:50%;cursor:pointer;background:rgba(0,0,0,.55);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--pal-titre,var(--pal-titre,#ffe08a)) 35%,transparent);filter:grayscale(.6)}
+html.borne .b-bell.on{box-shadow:inset 0 0 0 1px var(--pal-titre,#ffe08a),0 0 12px color-mix(in srgb,var(--pal-titre,var(--pal-titre,#ffe08a)) 50%,transparent)}
+html.borne .b-bell:hover,html.borne .b-bell:focus-visible{box-shadow:inset 0 0 0 1px var(--pal-titre,#ffe08a)}
+html.borne[data-skin="1960"][data-mode=arcade]:not([data-habit=fauneye]) #home .copy{color:#3a2a20}
+
+/* KorhoGame déplié : les grands jeux à gauche, Katabatik et ses mini-jeux à droite */
+html.borne .b-panel .b-subgrid.b-split{display:grid;gap:16px}
+html.borne .b-side{display:grid;gap:10px;align-content:start}
+html.borne .b-big{grid-template-columns:repeat(auto-fill,minmax(clamp(112px,11vw,150px),1fr))}
+html.borne .b-minis{grid-template-columns:repeat(2,minmax(0,1fr));padding-left:16px;border-left:2px dashed rgba(244,143,177,.35)}
+
+
+html.borne .b-face{position:absolute;right:8px;top:4px;z-index:2;font-style:normal;font-size:1.4rem;line-height:1;color:var(--nc);text-shadow:0 0 8px var(--nc)}
+html.borne .b-die{grid-column:1 / -1;display:flex;align-items:center;justify-content:center;min-height:clamp(58px,7vh,76px);border:0;border-radius:10px;cursor:pointer;
+  background:radial-gradient(circle at 30% 30%,#3a1a26,#160a10);box-shadow:inset 0 0 0 3px #f48fb1,inset 0 -6px 0 rgba(0,0,0,.45),0 5px 0 #0b0a09;color:#fff}
+html.borne .b-die span{display:inline-block;line-height:1;color:#f48fb1;text-shadow:0 0 14px #f48fb1;transform:rotate(var(--r,0deg));transition:transform .07s}
+html.borne .b-die b{font-family:"Bebas Neue",Impact,sans-serif;font-weight:400;font-size:1.5rem;letter-spacing:.08em;text-shadow:0 0 10px #f48fb1}
+html.borne .b-die:active{transform:translateY(3px)}
+
+html.borne .kb-tab[data-action*="'bb'"],html.borne .kb-tab[data-action*="'fi'"],html.borne #fi-panel .kb-back,html.borne #bb-panel .kb-back{display:none!important}
+
+/* grands jeux : l'écran prend la hauteur de la fenêtre ; FaunInvaders : écran vertical */
+html.borne[data-big=wide]{--gw:min(calc(100vw - 80px),calc((100vh - 24px) * 4 / 3));--gh:calc(var(--gw) * .75)}
+html.borne[data-big=tate]{--gh:calc(100vh - 24px);--gw:min(calc(100vw - 80px),calc(var(--gh) * .75))}
+@media (max-width:700px){
+  
+  html.borne .b-minis{padding:12px 0 0;border-left:0;border-top:2px dashed rgba(244,143,177,.35)}
+  html.borne .b-big{grid-template-columns:repeat(2,minmax(0,1fr))}
+  html.borne[data-big=wide]{--gw:var(--scrW);--gh:calc(var(--scrW) * .75)}
+  html.borne[data-big=tate]{--gw:var(--scrW);--gh:min(calc(100vh - 24px),calc(var(--scrW) * 4 / 3))}
+}
+html.borne .b-panel .b-subgrid.b-split{grid-template-columns:minmax(0,3fr) minmax(0,2fr)}
+html.borne .b-minis .cab b{font-size:clamp(.9rem,1.05vw,1.05rem)!important;letter-spacing:0!important;white-space:nowrap;max-width:none!important;overflow:visible!important}
+/* zéro Koin : le décompte dans la fente et à l'écran */
+html.borne .b-slot.b-wait u{color:var(--pal-titre,#ffe08a);text-shadow:0 0 8px color-mix(in srgb,var(--pal-titre,var(--pal-titre,#ffe08a)) 70%,transparent)}
+html.borne .b-slot.b-wait i{animation:bwait 1s steps(2) infinite}
+@keyframes bwait{50%{box-shadow:0 0 0 2px #9a958c,0 0 16px color-mix(in srgb,var(--pal-titre,var(--pal-titre,#ffe08a)) 90%,transparent)}}
+
+/* ---------- grammaire commune (audit du 25 octobre) ---------- */
+/* Baku Boom : toujours au même endroit, au bout du cadre, sous l'écran, à côté des Koins */
+
+html.borne .b-bezelfoot .b-lore{margin-left:auto}
+html.borne .b-bezelfoot .b-boom{flex-direction:row;gap:8px;padding:0}
+
+html.borne .b-bezelfoot .b-boom span{font-size:.55rem}
+html.borne body:not(.on-home) .b-boom i{background:radial-gradient(circle at 40% 32%,#d0563f,#8a2216 60%,#3a0c08)}
+/* les Koins : sur le cadre, sous l'écran, visibles dans chaque programme */
+html.borne .b-bezelfoot #koins.b-credit{position:static;display:flex;align-items:center;gap:8px;
+  color:#ff9a3c;text-shadow:0 0 8px rgba(255,140,40,.6);}
+html.borne.borne-ready .b-bezelfoot #koins.b-credit{visibility:visible!important}/* 1er nov. (E47) : visible une fois la borne prête ; zéro mot KOINS sur la photo d attente */
+html.borne .b-bezelfoot #koins.b-credit::before{content:"KOINS"}
+/* le guide (le Mask en miniature) visite le panneau, et reste hors des programmes */
+html.borne body:not(.on-home) .guide{display:none!important}
+/* cibles de 44 px au moins */
+
+html.borne .b-bell{width:44px;height:44px;line-height:44px;font-size:19px}
+html.borne .b-knob{width:44px!important;height:44px!important}
+html.borne .b-knob::after{top:6px;height:13px;transform-origin:50% 16px}
+html.borne .b-panel .menu a::before,html.borne .b-panel .menu button::before{width:44px;height:44px;margin-left:-22px}
+html.borne .b-panel .menu a,html.borne .b-panel .menu button{min-width:44px}
+
+
+html.borne .b-care button{height:48px;}
+html.borne .b-full header button{min-height:44px;min-width:44px}
+/* téléphone : les noms des touches tiennent */
+@media (max-width:700px){
+  html.borne .b-panel .cab b{letter-spacing:.02em!important;white-space:normal;}
+  html.borne .b-die b{display:inline}
+  html.borne .b-bezelfoot .b-boom span{display:none}
+  
+  
+}
+
+/* un programme ouvert : le meuble se replie autour de l'écran, qui prend la hauteur de la fenêtre ; le cadre garde les Koins et Baku Boom */
+html.borne .b-roof,html.borne .bar,html.borne .b-land{transition:max-height .6s cubic-bezier(.6,.05,.3,1),opacity .4s,margin .6s,padding .6s;max-height:220px}
+html.borne[data-prog] .b-roof,html.borne[data-prog] .bar,html.borne[data-prog] .b-land{max-height:0!important;opacity:0;margin-top:0!important;margin-bottom:0!important;padding-top:0!important;padding-bottom:0!important;overflow:hidden;pointer-events:none;border:0}
+html.borne[data-prog] .wrap{padding-top:8px!important}
+html.borne[data-prog]{--gh:calc(100dvh - 140px) !important;--gw:min(calc(100vw - 80px),calc((100dvh - 140px) * 16 / 9)) !important}
+html.borne[data-prog][data-mode=device]{--gw:min(calc(100vw - 80px),calc((100dvh - 140px) * 4 / 3 + 380px)) !important}
+html.borne[data-prog][data-big=tate]{--gw:min(calc(100vw - 80px),calc((100dvh - 140px) * .75)) !important}
+@media (max-width:700px){
+  html.borne[data-prog],html.borne[data-prog][data-mode=device],html.borne[data-prog][data-big=tate]{--gw:calc(100vw - 36px) !important;}
+}
+
+/* ---------- programmes : cibles de 44 px, textes lisibles, rien de coupé ---------- */
+html.borne #bb-panel{overflow-y:auto!important}
+html.borne .bb-step{min-height:34px}
+html.borne #bb-panel button,html.borne #mm-panel button,html.borne #c4-panel button,html.borne #hang-panel button{min-height:44px}
+html.borne #mm-board .mm-legend,html.borne #mm-board em{display:none!important}
+html.borne #mm-panel>#mm-levels{order:0}html.borne #mm-panel>#mm-status{order:1}html.borne #mm-panel>#mm-palette{order:2}html.borne #mm-panel>#mm-actions{order:3}html.borne #mm-panel>#mm-board{order:4}html.borne #mm-panel>.kb-foot{order:5}
+html.borne #mm-palette .mm-peg{width:44px;height:44px}
+html.borne .hang-key{min-height:44px;min-width:28px}
+html.borne .ch-sel-btn{min-height:44px}
+html.borne #ch-kerema-btn{min-height:44px;font-size:12px}
+html.borne #chess-status,html.borne #cp-w,html.borne #cp-b{font-size:12px!important}
+html.borne .kk-card-l,html.borne .bl,html.borne #kk-counter{font-size:11px!important}
+html.borne .kk-redeal,html.borne .kk-hand,html.borne #kk-add-btn,html.borne .kk-fork-btn{min-height:44px}
+html.borne #run{min-height:44px;font-size:12px!important;padding:0 18px}
+html.borne #pick{font-size:12px!important}
+html.borne .over.kapc .btn{min-height:48px;min-width:104px;font-size:15px}
+/* VHS : le pupitre reste en haut de sa colonne ; les morceaux tiennent dans la colonne */
+html.borne .vhs-transport{position:sticky;top:0;z-index:6;background:inherit}
+html.borne .vhs-tracklist{overflow-x:hidden}
+html.borne .vhs-tracklist>*{max-width:100%;box-sizing:border-box;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-height:40px}
+html.borne .vhs-key,html.borne .vhs-tv-key,html.borne .vhs-tab{min-height:44px;min-width:44px}
+
+/* ---------- d'un programme à l'autre : bords de l'écran, points sous l'écran, neige de changement de chaîne ---------- */
+html.borne .b-edge{position:absolute;top:0;bottom:0;z-index:35;width:28px;align-items:center;justify-content:center;cursor:pointer;touch-action:none}
+html.borne .b-edge-l{left:0}html.borne .b-edge-r{right:0}
+html.borne[data-prog] .b-edge{display:flex}
+html.borne .b-edge i{font-style:normal;font-size:28px;line-height:1;color:rgba(255,240,210,.0);text-shadow:0 0 8px rgba(0,0,0,.8);transition:color .2s}
+html.borne .b-edge:hover i,html.borne .b-edge:active i{color:rgba(255,240,210,.85)}
+html.borne .b-edge:hover{background:linear-gradient(90deg,rgba(255,255,255,.08),transparent)}
+html.borne .b-edge-r:hover{background:linear-gradient(270deg,rgba(255,255,255,.08),transparent)}
+html.borne .b-dots{display:flex;justify-content:center;gap:0;margin-top:6px}
+html.borne .b-dots[hidden],html.borne:not([data-prog]) .b-dots{display:none}
+html.borne .b-dot{width:34px;height:30px;padding:0;border:0;background:none;cursor:pointer;position:relative}
+html.borne .b-dot::after{content:"";position:absolute;left:50%;top:50%;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50%;background:#4a4540;box-shadow:inset 0 1px 0 rgba(255,255,255,.12)}
+html.borne .b-dot.on::after{background:#ffe08a;box-shadow:0 0 8px color-mix(in srgb,var(--pal-titre,var(--pal-titre,#ffe08a)) 80%,transparent)}
+html.borne .b-dot:hover::after{background:#9a8f7c}
+html.borne .b-chan{position:absolute;left:50%;top:6%;z-index:46;transform:translateX(-50%);pointer-events:none;opacity:0;font-family:"Press Start 2P",monospace;font-size:clamp(.7rem,1.6vw,1.1rem);color:#b9ff8a;text-shadow:0 0 10px rgba(150,255,120,.8),0 2px 0 #000;white-space:nowrap}
+html.borne .b-chan.on{animation:bchan 1.6s ease-out forwards}
+@keyframes bchan{0%,70%{opacity:1}100%{opacity:0}}
+html.borne .b-glass.b-snow::before{opacity:1;
+  }
+@keyframes bsnow{0%{opacity:1;background-position:0 0}50%{opacity:1;background-position:13px 7px}100%{opacity:0;background-position:-9px 21px}}
+@media (prefers-reduced-motion:reduce){html.borne .b-glass.b-snow::before{animation:none;opacity:0}}
+
+/* ---------- tenue à toutes les tailles (25 oct., 12 h) : fronton en grille souple, porte qui tient, borne couchée ---------- */
+html.borne .bar{grid-template-columns:minmax(0,1fr) minmax(0,2.2fr) minmax(0,1fr)!important}
+html.borne .bar .brand{min-width:0!important;white-space:nowrap;}
+html.borne .bar .dock{min-width:0!important;width:auto!important;max-width:100%!important;overflow:hidden;box-sizing:border-box;margin:0!important;left:auto!important;position:relative!important}
+html.borne #radio-toggle{max-width:100%;min-width:0;overflow:hidden}
+html.borne #radio-toggle>*{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+html.borne .b-row2{margin-top:14px!important;width:auto!important}
+html.borne .b-door{flex-wrap:wrap;justify-content:center;}
+
+@media (max-width:700px){
+  html.borne .bar{grid-template-columns:minmax(0,1fr)!important}
+  
+  
+  
+}
+@media (max-height:520px) and (orientation:landscape){
+  html.borne{--scrW:min(calc(100vw - 80px),520px)}
+  /* téléphone couché, en jeu (30 oct.) : l'écran prend toute la hauteur ; les commandes tiennent dans une colonne fixe à droite, dans la fenêtre */
+  html.borne[data-prog]{--gh:calc(100dvh - 16px) !important;--gw:min(calc(100vw - 96px),calc((100dvh - 16px) * 16 / 9)) !important}
+  html.borne[data-prog] body{padding-right:78px!important;box-sizing:border-box}
+  html.borne[data-prog] .b-bezelfoot{position:fixed!important;right:6px!important;left:auto!important;top:6px!important;bottom:6px!important;width:66px!important;height:auto!important;margin:0!important;
+    display:flex!important;flex-direction:column!important;flex-wrap:nowrap!important;align-items:center!important;justify-content:space-between!important;gap:4px!important;padding:6px 0!important;z-index:60;
+    background:rgba(10,9,8,.86);border-radius:8px;box-shadow:0 0 0 1px rgba(255,255,255,.06)}
+  html.borne[data-prog] .b-bezelfoot #koins.b-credit::before{content:none!important;display:none!important}
+  html.borne[data-prog] .b-bezelfoot .koins{padding:0 4px!important;min-width:0!important;width:auto!important;font-size:12px!important}
+  html.borne[data-prog] .b-bezelfoot .b-online{display:none!important}
+  html.borne[data-prog] .b-bezelfoot .b-pfx{flex-direction:column!important;gap:3px!important;width:auto!important;order:0!important}
+  html.borne[data-prog] .b-bezelfoot .b-boom{margin:0!important}
+}
+/* les Koins sur l'écran d'accueil ; à zéro, le décompte clignote */
+html.borne .b-credit-scr{position:absolute;left:2.5%;top:3%;z-index:30;pointer-events:none;font-family:"Press Start 2P",monospace;font-size:clamp(.6rem,1.3vw,.95rem);color:#ff9a3c;text-shadow:0 0 8px rgba(255,140,40,.6),0 2px 0 #000;white-space:nowrap}
+html.borne .b-credit-scr b{font-weight:400;color:#ffe9a8}
+html.borne .b-credit-scr.wait span{color:var(--pal-titre,#ffe08a);animation:bwaitc 1s steps(2) infinite}
+@keyframes bwaitc{50%{opacity:.35}}
+html.borne[data-prog] .b-credit-scr{display:none}
+html.borne .b-bezelfoot #koins.b-credit.b-zero{color:var(--pal-titre,#ffe08a)}
+
+/* ---------- skin bois : matières Midjourney (25 oct.) ; les appareils et la liseuse gardent leur habit ---------- */
+html.borne[data-skin=bois]:not([data-mode=device]):not([data-habit=fauneye]) .wrap{background-color:#2b1d14;background-image:url(skin-bois-flanc.webp);background-size:384px 384px}
+html.borne[data-skin=bois]:not([data-mode=device]):not([data-habit=fauneye]) .bar .brand{background:#7c3c12 url(skin-bois-fronton.webp) center/100% 100% no-repeat;color:#2a0f05;text-shadow:0 1px 0 rgba(255,236,190,.55),0 0 18px rgba(255,200,110,.5);box-shadow:0 6px 18px rgba(0,0,0,.55)}
+html.borne[data-skin=bois]:not([data-mode=device]):not([data-habit=fauneye]) .bar .dock{background:#111 url(skin-bois-grille.webp) center/100% 100% no-repeat;box-shadow:0 6px 14px rgba(0,0,0,.55)}
+html.borne[data-skin=bois]:not([data-mode=device]):not([data-habit=fauneye]) .bar .dock #radio-toggle{background:rgba(8,7,6,.78);border-radius:4px}
+html.borne[data-skin=bois]:not([data-mode=device]):not([data-habit=fauneye]) .b-bezel .b-screen{border-style:solid;border-width:clamp(20px,3.6vh,36px) clamp(13px,2.1vw,22px);border-image:url(skin-bois-cadre.webp) 137 78 137 77 stretch;border-radius:0}
+html.borne[data-skin=bois]:not([data-mode=device]):not([data-habit=fauneye]) .b-panel{background:#1a1816 url(skin-bois-panneau.webp) center/cover no-repeat}
+html.borne[data-skin=bois] .b-door{background:none;box-shadow:none;width:auto;max-width:calc(100% - 24px);gap:22px}
+html.borne[data-skin=bois] .b-slot{width:clamp(200px,34vw,280px);aspect-ratio:672/470;padding:0;border-radius:4px;background:url(skin-bois-porte.webp) center/100% 100% no-repeat;box-shadow:0 6px 14px rgba(0,0,0,.6)}
+html.borne[data-skin=bois] .b-slot b{position:absolute;left:27%;right:27%;top:15%;height:15%;display:flex;align-items:center;justify-content:center;background:#0b0a09;border-radius:3px;font-size:clamp(6px,.9vw,8px)}
+html.borne[data-skin=bois] .b-slot i{display:none}
+html.borne[data-skin=bois] .b-slot:hover{filter:brightness(1.08)}
+html.borne[data-skin=bois] .b-coin{top:20%;left:50%}
+html.borne[data-skin=bois] .b-knoblab{color:#e9e1cf}
+/* le cadre bois ajoute son épaisseur : le meuble s'élargit d'autant, l'écran garde sa taille sur grand écran et cède 28 px sur téléphone */
+html.borne[data-skin=bois]:not([data-mode=device]):not([data-habit=fauneye]) .wrap,html.borne[data-skin=bois]:not([data-mode=device]):not([data-habit=fauneye]) .b-roof{width:calc(var(--gw) + 100px)}
+@media (max-width:700px){
+  html.borne[data-skin=bois]:not([data-mode=device]):not([data-habit=fauneye]){--scrW:calc(100vw - 64px)}
+  
+  html.borne[data-skin=bois]:not([data-mode=device]):not([data-habit=fauneye]) .wrap,html.borne[data-skin=bois]:not([data-mode=device]):not([data-habit=fauneye]) .b-roof{width:100%}
+}
+html.borne[data-skin=bois][data-prog]:not([data-mode=device]):not([data-habit=fauneye]){--bv:clamp(20px,3.6vh,36px);--gh:calc(100dvh - 140px - 2 * var(--bv)) !important;--gw:min(calc(100vw - 120px),calc((100dvh - 140px - 2 * var(--bv)) * 16 / 9)) !important}
+html.borne[data-skin=bois][data-prog][data-big=tate]:not([data-mode=device]){--gw:min(calc(100vw - 120px),calc((100dvh - 140px - 2 * var(--bv)) * .75)) !important}
+@media (max-width:700px){html.borne[data-skin=bois][data-prog]:not([data-mode=device]):not([data-habit=fauneye]){--gh:calc(100dvh - 132px - 2 * var(--bv)) !important;--gw:calc(100vw - 64px) !important}}
+html.borne[data-skin=bois] .b-slot b{gap:.6em}
+@media (max-width:700px){html.borne[data-skin=bois]:not([data-mode=device]):not([data-habit=fauneye]) .bar .brand{min-height:70px;padding:14px 8px}}
+
+/* ---------- skin métal : matières Midjourney (25 oct.) ---------- */
+html.borne[data-skin=metal]:not([data-mode=device]):not([data-habit=fauneye]) .wrap{background-color:#5d6166;background-image:url(skin-metal-flanc.webp)!important;background-size:384px 384px!important}
+html.borne[data-skin=metal]:not([data-mode=device]):not([data-habit=fauneye]) .bar .brand{background:#1f3d5c url(skin-metal-fronton.webp) center/100% 100% no-repeat;color:#0a1622;text-shadow:0 1px 0 rgba(255,255,255,.6),0 0 16px rgba(200,230,255,.7);box-shadow:0 6px 18px rgba(0,0,0,.5)}
+html.borne[data-skin=metal]:not([data-mode=device]):not([data-habit=fauneye]) .bar .dock{background:#3a3d41 url(skin-metal-grille.webp) center/100% 100% no-repeat;box-shadow:0 6px 14px rgba(0,0,0,.45)}
+html.borne[data-skin=metal]:not([data-mode=device]):not([data-habit=fauneye]) .bar .dock #radio-toggle{background:rgba(8,10,12,.8);border-radius:4px}
+html.borne[data-skin=metal]:not([data-mode=device]):not([data-habit=fauneye]) .b-bezel .b-screen{border-style:solid;border-width:clamp(20px,3.6vh,36px) clamp(13px,2.1vw,22px);border-image:url(skin-metal-cadre.webp) 171 126 186 124 stretch;border-radius:0}
+html.borne[data-skin=metal]:not([data-mode=device]):not([data-habit=fauneye]) .b-panel{background:#3a3d41 url(skin-metal-panneau.webp) center/cover no-repeat}
+html.borne[data-skin=metal] .b-door{background:none;box-shadow:none;width:auto;max-width:calc(100% - 24px);gap:22px}
+html.borne[data-skin=metal] .b-slot{width:clamp(220px,36vw,300px);aspect-ratio:1024/559;padding:0;border-radius:4px;background:url(skin-metal-porte.webp) center/100% 100% no-repeat;box-shadow:0 6px 14px rgba(0,0,0,.5)}
+html.borne[data-skin=metal] .b-slot b{position:absolute;height:15%;display:flex;align-items:center;justify-content:center;background:#05080b;border-radius:3px;box-shadow:inset 0 0 0 2px #6a6e74;}
+html.borne[data-skin=metal] .b-slot i{display:none}
+html.borne[data-skin=metal] .b-coin{top:20%;left:50%}
+
+html.borne[data-skin=metal]:not([data-mode=device]):not([data-habit=fauneye]) .wrap,html.borne[data-skin=metal]:not([data-mode=device]):not([data-habit=fauneye]) .b-roof{width:calc(var(--gw) + 100px)}
+html.borne[data-skin=metal][data-prog]:not([data-mode=device]):not([data-habit=fauneye]){--bv:clamp(20px,3.6vh,36px);--gh:calc(100dvh - 140px - 2 * var(--bv)) !important;--gw:min(calc(100vw - 120px),calc((100dvh - 140px - 2 * var(--bv)) * 16 / 9)) !important}
+html.borne[data-skin=metal][data-prog][data-big=tate]:not([data-mode=device]){--gw:min(calc(100vw - 120px),calc((100dvh - 140px - 2 * var(--bv)) * .75)) !important}
+@media (max-width:700px){
+  html.borne[data-skin=metal]:not([data-mode=device]):not([data-habit=fauneye]){--scrW:calc(100vw - 64px)}
+  html.borne[data-skin=metal][data-prog]:not([data-mode=device]):not([data-habit=fauneye]){--gh:calc(100dvh - 132px - 2 * var(--bv)) !important;--gw:calc(100vw - 64px) !important}
+  html.borne[data-skin=metal]:not([data-mode=device]):not([data-habit=fauneye]) .wrap,html.borne[data-skin=metal]:not([data-mode=device]):not([data-habit=fauneye]) .b-roof{width:100%}
+  html.borne[data-skin=metal]:not([data-mode=device]):not([data-habit=fauneye]) .bar .brand{min-height:70px;padding:14px 8px}
+}
+
+/* ---------- skin 1960 : matières Midjourney (25 oct.), variantes tirées au hasard (variables posées par borne-cabinet.js) ---------- */
+html.borne[data-skin="1960"]:not([data-mode=device]):not([data-habit=fauneye]) .wrap{background-color:#e8dcc2;background-image:url(skin-1960-flanc.webp)!important;background-size:496px 298px!important}
+html.borne[data-skin="1960"]:not([data-mode=device]):not([data-habit=fauneye]) .bar .brand{background:#8a1c12 var(--v-fronton) center/100% 100% no-repeat;color:#5a0f08;text-shadow:0 1px 0 rgba(255,250,230,.8),0 0 14px rgba(255,240,200,.9);box-shadow:0 6px 18px rgba(0,0,0,.35)}
+html.borne[data-skin="1960"]:not([data-mode=device]):not([data-habit=fauneye]) .bar .dock{background:#c9b48a url(skin-1960-grille.webp) center/100% 100% no-repeat;box-shadow:0 6px 14px rgba(0,0,0,.35)}
+html.borne[data-skin="1960"]:not([data-mode=device]):not([data-habit=fauneye]) .bar .dock #radio-toggle{background:rgba(40,20,10,.82);border-radius:4px}
+html.borne[data-skin="1960"]:not([data-mode=device]):not([data-habit=fauneye]) .b-bezel{background:#e8dcc2;box-shadow:0 0 0 4px rgba(0,0,0,.18)}
+html.borne[data-skin="1960"]:not([data-mode=device]):not([data-habit=fauneye]) .b-bezel .b-screen{border-style:solid;border-width:clamp(22px,4vh,40px) clamp(15px,2.4vw,26px);border-image-source:var(--v-cadre);border-image-slice:var(--v-cs);border-image-repeat:stretch;border-radius:0}
+html.borne[data-skin="1960"]:not([data-mode=device]):not([data-habit=fauneye]) .b-panel{background:#2a6f6a var(--v-panneau) center/cover no-repeat}
+html.borne[data-skin="1960"] .b-door{background:none;box-shadow:none;width:auto;max-width:calc(100% - 24px);gap:22px}
+html.borne[data-skin="1960"] .b-slot{width:clamp(220px,36vw,300px);aspect-ratio:var(--v-pr);padding:0;border-radius:4px;background:var(--v-porte) center/100% 100% no-repeat;box-shadow:0 6px 14px rgba(0,0,0,.35)}
+html.borne[data-skin="1960"] .b-slot b{position:absolute;left:var(--v-sx);top:var(--v-sy);width:var(--v-sw);height:var(--v-sh);display:flex;gap:.6em;align-items:center;justify-content:center;background:#1a0c08;border-radius:3px;box-shadow:inset 0 0 0 2px #c9ccd0;font-size:clamp(6px,.9vw,8px)}
+html.borne[data-skin="1960"] .b-slot i{display:none}
+html.borne[data-skin="1960"] .b-coin{top:22%;left:50%}
+html.borne[data-skin="1960"] .b-knoblab{color:#3a2a20}
+html.borne[data-skin="1960"]:not([data-mode=device]):not([data-habit=fauneye]) .wrap,html.borne[data-skin="1960"]:not([data-mode=device]):not([data-habit=fauneye]) .b-roof{width:calc(var(--gw) + 110px)}
+html.borne[data-skin="1960"][data-prog]:not([data-mode=device]):not([data-habit=fauneye]){--bv:clamp(22px,4vh,40px);--gh:calc(100dvh - 140px - 2 * var(--bv)) !important;--gw:min(calc(100vw - 130px),calc((100dvh - 140px - 2 * var(--bv)) * 16 / 9)) !important}
+html.borne[data-skin="1960"][data-prog][data-big=tate]:not([data-mode=device]){--gw:min(calc(100vw - 130px),calc((100dvh - 140px - 2 * var(--bv)) * .75)) !important}
+@media (max-width:700px){
+  html.borne[data-skin="1960"]:not([data-mode=device]):not([data-habit=fauneye]){--scrW:calc(100vw - 72px)}
+  html.borne[data-skin="1960"][data-prog]:not([data-mode=device]):not([data-habit=fauneye]){--gh:calc(100dvh - 132px - 2 * var(--bv)) !important;--gw:calc(100vw - 72px) !important}
+  html.borne[data-skin="1960"]:not([data-mode=device]):not([data-habit=fauneye]) .wrap,html.borne[data-skin="1960"]:not([data-mode=device]):not([data-habit=fauneye]) .b-roof{width:100%}
+  html.borne[data-skin="1960"]:not([data-mode=device]):not([data-habit=fauneye]) .bar .brand{min-height:70px;padding:14px 8px}
+}
+html.borne[data-skin="1960"]:not([data-mode=device]):not([data-habit=fauneye]) .b-bezelfoot .b-boom span{color:#3a2a20;opacity:.85}
+
+/* ---------- pièces Midjourney (25 oct.) : autocollant Lore, plaque Mauk Tenieb, caméra, manette, molettes, Baku Boom, Koin, dé ---------- */
+html.borne .b-lore{display:inline-flex;align-items:center;justify-content:center;width:112px;box-sizing:border-box;color:#1d1a16;filter:drop-shadow(0 3px 3px rgba(0,0,0,.4))}
+html.borne .b-badge{display:inline-grid;place-content:center;box-sizing:border-box;}
+
+html.borne .b-cam #kapture{background:var(--i-cam) center bottom/contain no-repeat!important;box-shadow:none!important;filter:drop-shadow(0 4px 4px rgba(0,0,0,.5))}
+html.borne .b-cam #kapture::before{display:none}
+html.borne .b-cam #kapture::after{right:auto;left:50%;top:auto;bottom:6px;opacity:0}
+html.borne .b-cam #kapture:hover,html.borne[data-habit=photo] .b-cam #kapture{filter:drop-shadow(0 0 8px rgba(255,74,58,.7)) drop-shadow(0 4px 4px rgba(0,0,0,.5))}
+html.borne .b-stick{width:76px;height:100px}
+html.borne .b-stick::before{display:none}
+html.borne .b-stick i{left:0;bottom:0;width:76px;height:100px;margin:0;border-radius:0;background:var(--i-stick) center bottom/contain no-repeat;transform-origin:50% 88%;}
+html.borne .b-stick i::after{display:none}
+html.borne .b-knob{background:url(molette.webp) center/contain no-repeat!important;box-shadow:none!important;transform:rotate(-80deg);filter:drop-shadow(0 3px 3px rgba(0,0,0,.45))}
+html.borne .b-knob::after{display:none}
+html.borne .b-knob[data-on="1"]{transform:rotate(0deg)}
+
+html.borne .b-boom i,html.borne .b-bezelfoot .b-boom i{box-shadow:none!important;filter:drop-shadow(0 3px 3px rgba(0,0,0,.5))}
+
+
+html.borne .b-coin{background:url(koin.webp) center/contain no-repeat!important;box-shadow:none!important}
+html.borne .b-die{gap:10px}
+html.borne .b-die .b-dimg{width:56px;height:56px;object-fit:contain;transition:transform .07s;filter:drop-shadow(0 3px 3px rgba(0,0,0,.5))}
+html.borne .b-die span{font-size:1.4rem}
+
+/* ---------- console (25 oct., 13 h 50) : manette au milieu pour droitiers et gauchers, deux touches de chaque côté en arc ;
+   BC TL IG en rangée de départ au-dessus ; plaque du fabricant sur le bord avant ; Lore collé de travers au coin du cadre ---------- */
+html.borne .b-row1{display:block}
+html.borne .b-panel .cabinets{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto minmax(0,1fr) minmax(0,1fr)!important;}
+html.borne .b-panel .cabinets>.cab:nth-child(5){transform:translateY(14px)}
+html.borne .b-panel .cabinets>.b-stick{display:block!important;justify-self:center;}
+html.borne .b-row2{justify-content:center;}
+
+html.borne .b-plate{display:flex;justify-content:center;}
+
+html.borne .b-bezel{position:relative}
+html.borne .b-bezel .b-lore.b-stuck{position:absolute;z-index:6;}
+
+html.borne .b-bezelfoot{justify-content:space-between}
+html.borne .b-plant{width:auto!important;display:flex;align-items:flex-end}
+html.borne .b-plant img{height:100%;width:auto;display:block}
+/* la plante vivante : le pot reste, le feuillage (même image, découpée) pousse, s'épaissit, verdit, se taille ; l'assoiffée se fond dessus au fil du manque de soin */
+html.borne .b-plant{position:relative}
+html.borne .b-plant .p-u{display:block;position:relative;height:100%}
+html.borne .b-plant .p-u.p-x{position:absolute;left:0;top:0;width:100%;opacity:clamp(0,calc((var(--pn,0) - .12) * 1.25),1);transition:opacity 2s}
+html.borne .b-plant .p-pot{display:block;height:100%;width:auto;clip-path:inset(55% 0 0 0)}
+html.borne .b-plant .p-fo{position:absolute;left:0;top:0;width:100%;height:100%;clip-path:inset(0 0 34% 0);pointer-events:none;transition:filter 1.6s}
+html.borne .b-plant .p-mid{position:absolute;left:0;top:0;width:100%;height:100%;transform-origin:50% 66%;
+  transform:scale(calc(1 + .3 * var(--pg,0)),calc(1 + .3 * var(--pg,0) - .1 * var(--pn,0))) rotate(calc(var(--pn,0) * -3deg));transition:transform 1.8s}
+html.borne .b-plant .p-m,html.borne .b-plant .p-dn{position:absolute;left:0;top:0;width:100%;height:100%;display:block;
+  filter:saturate(calc(1 + .5 * var(--pd,0) - .5 * var(--pn,0))) brightness(calc(.97 + .08 * var(--pd,0) - .1 * var(--pn,0))) contrast(calc(1 + .12 * var(--ps,0))) sepia(calc(.4 * var(--pn,0)));
+  transition:filter 1.6s,clip-path 1.6s,opacity 1.6s}
+html.borne .b-plant .p-m{clip-path:ellipse(calc(75% - 29% * var(--ps,0)) calc(80% - 30% * var(--ps,0)) at 50% 55%)}
+html.borne .b-plant .p-dn{transform:translate(1%,-2%) scaleX(-1);clip-path:inset(0 0 42% 0);opacity:calc(.8 * var(--pd,0) * (1 - var(--pn,0)))}
+html.borne .b-pot.b-wet .b-plant .p-fo{filter:saturate(1.15) brightness(1.04)}
+@media (max-width:700px){
+  html.borne .b-panel .cabinets{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)!important;}
+  html.borne .b-panel .cabinets>.cab:nth-child(1){grid-area:1/1;}html.borne .b-panel .cabinets>.cab:nth-child(2){grid-area:1/3}
+  html.borne .b-panel .cabinets>.b-stick{grid-area:1/2/3/3;}
+  html.borne .b-panel .cabinets>.cab:nth-child(4){grid-area:2/1}html.borne .b-panel .cabinets>.cab:nth-child(5){grid-area:2/3;transform:none}
+  html.borne .b-stick,html.borne .b-stick i{width:60px;height:84px}
+  
+}
+/* BC TL IG : boutons Midjourney */
+html.borne .b-panel .menu a::before{background-color:transparent!important;background-position:center!important;background-size:contain!important;background-repeat:no-repeat!important;box-shadow:none!important;filter:drop-shadow(0 3px 3px rgba(0,0,0,.45))}
+html.borne .b-panel .menu a[href*="bandcamp"]::before{background-image:url(bouton-bc.webp)!important}
+html.borne .b-panel .menu a[href*="threadless"]::before{background-image:url(bouton-tl.webp)!important}
+html.borne .b-panel .menu a[href*="instagram"]::before{background-image:url(bouton-ig.webp)!important}
+html.borne .b-panel .menu a:hover::before{filter:brightness(1.15) drop-shadow(0 0 8px var(--mc,#fff))}
+/* Baku Boom : la dynamite peinte sur la façade, sous l'écran, à la place du bouton rond */
+html.borne .b-boom i,html.borne .b-bezelfoot .b-boom i{width:48px!important;height:48px!important;border-radius:4px;background:url(baku-boom-dynamite.webp) center/contain no-repeat!important;transform:rotate(-3deg)}
+html.borne body:not(.on-home) .b-boom i{filter:drop-shadow(0 0 6px rgba(220,40,30,.55)) drop-shadow(0 3px 3px rgba(0,0,0,.5))}
+html.borne .b-boom:hover i,html.borne .b-boom:focus-visible i{transform:rotate(-3deg) scale(1.08)}
+html.borne .b-boom:active i{transform:rotate(-3deg) translateY(2px) scale(.96)}
+
+/* ---------- touches : gros pavés électroluminescents, capuchon translucide éclairé par-dessous, légende imprimée (25 oct., 14 h) ---------- */
+html.borne .b-panel .cab{min-height:0!important;aspect-ratio:5/4;padding:0;border:0!important;border-radius:9px;overflow:visible;
+  background:linear-gradient(180deg,#2c2b29,#0e0d0c)!important;box-shadow:0 0 0 2px #050505,inset 0 1px 0 rgba(255,255,255,.14),0 6px 0 #050505,0 11px 18px rgba(0,0,0,.6)!important;transition:transform .06s,box-shadow .2s}
+html.borne .b-panel .cab::before{content:"";position:absolute;inset:8px;border-radius:5px;z-index:0;pointer-events:none;
+  
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.25),inset 0 0 22px rgba(0,0,0,.55),inset 0 -8px 12px rgba(0,0,0,.35);transition:opacity .2s,filter .2s}
+html.borne .b-panel .cab::after{content:"";position:absolute;inset:8px;border-radius:5px;z-index:1;pointer-events:none;display:block!important;width:auto!important;height:auto!important;box-shadow:none!important;
+  }
+html.borne .b-panel .cab .hit{position:absolute;inset:8px;z-index:2;display:grid;place-items:center;align-content:center;padding:6px;border-radius:5px}
+html.borne .b-panel .cab b{color:#140c06!important;font-size:clamp(1rem,1.7vw,1.45rem)!important;letter-spacing:.06em;line-height:1;text-shadow:0 1px 0 rgba(255,255,255,.45)!important}
+html.borne .b-panel .cab b::after{color:#140c06!important;text-shadow:none!important}
+html.borne .b-panel .cab:hover::before,html.borne .b-panel .cab:focus-within::before{opacity:.9}
+html.borne .b-panel .cab:hover,html.borne .b-panel .cab:focus-within{box-shadow:0 0 0 2px #050505,inset 0 1px 0 rgba(255,255,255,.14),0 6px 0 #050505,0 0 26px color-mix(in srgb,var(--nc) 55%,transparent)!important}
+html.borne .b-panel .cab.on-air::before,html.borne .b-panel .cab.lit::before{opacity:1;filter:brightness(1.15)}
+html.borne .b-panel .cab.on-air,html.borne .b-panel .cab.lit{box-shadow:0 0 0 2px #050505,0 6px 0 #050505,0 0 34px var(--nc)!important}
+html.borne .b-panel .cab:active{transform:translateY(4px)}
+html.borne .b-panel .cab:active::before{opacity:1;filter:brightness(1.3)}
+html.borne .b-panel .cabinets>.cab:nth-child(1):active,html.borne .b-panel .cabinets>.cab:nth-child(5):active{transform:translateY(18px)}
+html.borne .b-panel .b-face{z-index:3;color:#140c06;text-shadow:none}
+html.borne .b-minis .cab{aspect-ratio:auto;min-height:62px!important}
+@media (max-width:700px){html.borne .b-panel .cab{aspect-ratio:4/3}html.borne .b-panel .cab b{font-size:1.05rem!important}}
+
+/* Baku Boom : le mot s'affiche seulement à l'activation, en grand sur l'écran */
+html.borne .b-boom span{display:none}
+html.borne .b-bbflash{position:fixed;z-index:9999!important;left:50%;top:50%;pointer-events:none;transform:translate(-50%,-50%);font-family:"Bebas Neue",Impact,sans-serif;font-size:clamp(2.6rem,9vw,7rem);letter-spacing:.08em;color:#fff4e6;
+  text-shadow:0 0 18px #ff5b3c,0 0 42px #b8231a,0 4px 0 #000;animation:bbflash .6s ease-out forwards;white-space:nowrap}
+@keyframes bbflash{0%{opacity:0;transform:translate(-50%,-50%) scale(.6)}18%{opacity:1;transform:translate(-50%,-50%) scale(1.08)}70%{opacity:1}100%{opacity:0;transform:translate(-50%,-50%) scale(1.25)}}
+
+/* la manette en miroir, sous l'écran, quand un programme est ouvert */
+html.borne .b-stick-mini{display:none;width:40px!important;height:52px!important;margin-left:auto}
+html.borne .b-stick-mini i{width:40px!important;height:52px!important}
+html.borne[data-prog] .b-stick-mini{display:block}
+html.borne[data-prog] .b-bezelfoot .b-boom{margin-left:12px}
+
+html.borne .b-panel .cab::after{mix-blend-mode:multiply;}
+html.borne .b-panel .cab .hit{justify-items:center!important;text-align:center!important}
+html.borne .b-panel .cab .hit b{display:block;width:100%;text-align:center;position:static!important}
+html.borne .b-panel .cab .hit b::after{display:none!important}
+html.borne .b-panel .cab .hit b{border-bottom:0!important;padding-bottom:0!important}
+html.borne .b-panel .cab::before{background:radial-gradient(ellipse at 50% 42%,color-mix(in srgb,var(--nc) 78%,#fff) 0%,var(--nc) 42%,color-mix(in srgb,var(--nc) 62%,#000) 100%)!important;opacity:.92}
+
+
+/* ---------- cohérence (25 oct., relecture design) : deux lignes d'alignement, trois voix de lettrage, porte dans l'axe ---------- */
+/* Proposition de direction artistique, borne Insert Koin. A ajouter apres borne-cabinet.css.
+   Trois voix de lettrage : enseigne (Bebas), gravure (DM Mono, 11 px), afficheur (Press Start 2P).
+   Une echelle d'espacement : 4 / 8 / 12 / 16 / 24 / 32 px. Deux aplombs : --edge (bord des pieces du meuble, 8 px de la moulure) et --inset (bord de l'ecran, des touches, des Koins, 20 px). */
+
+/* ---------- 1. jetons ---------- */
+html.borne{
+  --s1:4px;--s2:8px;--s3:12px;--s4:16px;--s5:24px;--s6:32px;--edge:8px;--inset:20px;
+  --f-sign:"Bebas Neue",Impact,"Arial Narrow",sans-serif;
+  --f-eng:"DM Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  --f-led:"Press Start 2P",ui-monospace,monospace;
+  --eng-size:11px;--eng-track:.18em;
+  /* gravure sur le panneau, sur le cadre, sur la plaque des molettes */
+  --eng-panel:#efe6d2;--eng-panel-sh:0 1px 0 rgba(0,0,0,.85);
+  --eng-bezel:#d9d2c2;
+  --eng-plate:#1d1b18;--eng-plate-sh:0 1px 0 rgba(255,255,255,.45);
+  --lip:linear-gradient(180deg,#141210,#0c0b0a);--lip-ink:#b9b0a0}
+html.borne[data-skin=metal]{--lip:linear-gradient(180deg,#2b2e32,#1c1e21);--lip-ink:#c9ced4}
+html.borne[data-skin="1960"]{--eng-panel:#fff6d8;--eng-panel-sh:0 1px 0 rgba(0,0,0,.55);--eng-bezel:#3a2a20;--lip:linear-gradient(180deg,#15403d,#0f302e);--lip-ink:#f3e7c4}
+@media (max-width:700px){html.borne{--edge:6px;--inset:14px}}
+
+/* ---------- 2. le toit : la plante et la camera a l'echelle du meuble, posees sur le toit, a une gouttiere du bord ---------- */
+html.borne .b-roof{height:clamp(96px,13vh,120px)!important;padding:0 var(--s5)!important;margin-bottom:-4px!important}
+html.borne .b-pot{height:100%}
+html.borne .b-plant{height:100%;margin-bottom:-2px}
+html.borne .b-cam #kapture{width:68px!important;height:68px!important;margin-bottom:-4px}
+@media (max-width:700px){html.borne .b-roof{height:84px!important;padding:0 var(--s4)!important}html.borne .b-cam #kapture{width:56px!important;height:56px!important}}
+
+/* ---------- 3. le fronton : enseigne et haut-parleurs sur une meme ligne de base ; les commandes du juke-box sur une barrette, au pied de la grille ---------- */
+html.borne .bar{padding:var(--s3) var(--edge) var(--s2)!important;gap:var(--s3)!important}
+html.borne .bar .brand,html.borne .bar .dock{border-radius:6px!important}
+
+html.borne .bar .dock{min-height:clamp(88px,11.5vh,112px)!important}
+html.borne .bar .dock:first-of-type{align-content:stretch;gap:0 var(--s2);padding:var(--s2)!important}
+html.borne .bar .dock:first-of-type::before,html.borne .bar .dock:last-of-type::before{display:none}/* 1er nov. (E48) : son et PL remplissent leur boîte */
+html.borne .bar .dock:first-of-type #radio-toggle{align-self:end;box-sizing:border-box;
+  border:0!important;}
+html.borne .bar .dock:first-of-type #radio-toggle .motel-l{max-width:100%!important}
+html.borne .bar .dock:first-of-type #export-pl{justify-self:start;margin-bottom:var(--s1);}
+html.borne .bar .dock:first-of-type .b-bell{align-self:end;}
+@media (max-width:700px){
+  html.borne .bar{padding:var(--s2) var(--edge) var(--s1)!important;gap:var(--s2)!important}
+  html.borne .bar .dock{min-height:0!important}
+  
+  
+  
+  
+}
+
+/* ---------- 4. le cadre : une vitre noire (ou laquee en 1960) ; l'illustration Burrows imprimee sous la vitre, aux bords de l'ecran ---------- */
+/* marge + rembourrage = 20 px : la largeur du meuble (ecran + 100 px) ne change pas */
+html.borne .b-bezel{margin:var(--s1) var(--edge) 0!important;padding:calc(var(--inset) - var(--edge))!important;gap:var(--s3)!important;border-radius:8px!important;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.06),inset 0 12px 16px -6px rgba(0,0,0,.75),inset 0 -1px 0 rgba(255,236,205,.06),0 0 0 2px rgba(0,0,0,.55),0 1px 0 2px rgba(255,228,186,.07),0 6px 14px rgba(0,0,0,.45)!important}
+html.borne:not([data-skin="1960"]) .b-bezel{background-image:linear-gradient(115deg,rgba(255,255,255,.05),transparent 28%,transparent 72%,rgba(255,255,255,.03))}
+html.borne .b-land{border-radius:3px!important;}
+html.borne .b-land span{left:var(--s4)!important;font-family:var(--f-sign);}
+html.borne[data-skin="1960"] .b-land{box-shadow:0 0 0 2px #3a2a20!important}
+/* l'ecran d'accueil : les Koins restent au pied du cadre, une seule fois */
+/* le pied du cadre : Koins a gauche, Baku Boom a droite, meme hauteur (44 px), aux aplombs de l'ecran */
+html.borne .b-bezelfoot{min-height:44px;padding:0!important;gap:var(--s3)!important;align-items:center}
+html.borne .b-bezelfoot #koins.b-credit{height:44px;box-sizing:border-box;padding:0 var(--s4)!important;border-radius:4px!important;font-family:var(--f-led);font-size:.72rem!important;
+  }
+html.borne .b-bezelfoot .b-boom{min-height:44px}
+html.borne .b-bezelfoot .b-boom i{width:44px!important;height:44px!important}
+@media (max-width:700px){html.borne .b-bezel{gap:var(--s2)!important}html.borne .b-bezelfoot #koins.b-credit{font-size:.6rem!important;padding:0 var(--s3)!important}}
+
+/* ---------- 5. l'autocollant Lore : petit, colle de biais sur le coin haut droit du cadre, a cheval sur le bord ; absent quand le meuble se replie ---------- */
+html.borne .b-bezel .b-lore.b-stuck{top:-10px!important;right:-8px!important;width:96px!important;height:44px!important;font-family:var(--f-sign);font-size:1.05rem!important;letter-spacing:.14em;
+  transform:rotate(5deg)!important;filter:drop-shadow(0 1px 1px rgba(0,0,0,.55)) drop-shadow(1px 3px 3px rgba(0,0,0,.3))!important}
+html.borne .b-bezel .b-lore.b-stuck:hover,html.borne .b-bezel .b-lore.b-stuck:focus-visible{transform:rotate(5deg) translateY(-1px)!important;filter:drop-shadow(0 2px 2px rgba(0,0,0,.55)) drop-shadow(2px 6px 6px rgba(0,0,0,.35))!important}
+html.borne[data-prog] .b-bezel .b-lore.b-stuck{display:none!important}
+html.borne[data-prog] .b-bezel{padding-top:var(--s2)!important;padding-bottom:var(--s2)!important}
+@media (max-width:700px){html.borne .b-bezel .b-lore.b-stuck{right:-4px!important;top:-8px!important;width:88px!important;height:44px!important;font-size:.95rem!important}}
+
+/* ---------- 6. le panneau : rangee de depart, puis la manette au milieu entre deux paires de touches en arc, puis la plaque du fabricant sur le bord avant ---------- */
+html.borne .b-panel{margin-top:var(--s3)!important;padding:var(--s4) var(--inset) var(--s3)!important}
+html.borne .b-row2{margin:0 0 var(--s4)!important}
+html.borne .b-row2 .menu{gap:var(--s6)!important}
+html.borne .b-panel .menu a,html.borne .b-panel .menu button{padding-top:52px!important;font-family:var(--f-eng)!important;font-size:var(--eng-size)!important;letter-spacing:var(--eng-track)!important;
+  color:var(--eng-panel)!important;text-shadow:var(--eng-panel-sh);font-weight:500}
+html.borne .b-panel .cabinets{gap:var(--s4)!important;align-items:center}
+html.borne .b-panel .cabinets>.b-stick{margin:0 var(--s2)!important}
+html.borne .b-plate{margin-top:var(--s5)!important}
+
+
+html.borne .b-plate .b-badge:hover,html.borne .b-plate .b-badge:focus-visible{transform:translateY(-1px)!important}
+@media (max-width:700px){
+  html.borne .b-panel{padding:var(--s3) var(--inset)!important}
+  html.borne .b-row2 .menu{gap:var(--s5)!important}
+  html.borne .b-panel .cabinets{gap:var(--s3) var(--s2)!important}
+  html.borne .b-plate{margin-top:var(--s4)!important}
+}
+
+/* ---------- 7. le copyright : imprime sur la levre avant du panneau ---------- */
+html.borne #home .copy{margin:0!important;padding:var(--s2) var(--inset)!important;background:var(--lip)!important;opacity:1!important;color:var(--lip-ink)!important;
+  font-family:var(--f-eng);font-size:10px!important;letter-spacing:.08em!important;line-height:1.5;text-align:center;box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 3px 6px rgba(0,0,0,.35)}
+html.borne #home .copy b{font-weight:500;color:inherit}
+
+/* ---------- 8. la porte : la porte a monnayeur sur l'axe du meuble, les trois molettes sur une plaque de la meme tole, a sa droite ---------- */
+html.borne .wrap{container:cab / inline-size}
+html.borne .b-doorrow{display:grid!important;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;column-gap:var(--s4);row-gap:var(--s4);
+  width:100%!important;max-width:100%!important;margin:var(--s5) 0 0!important;padding:0 var(--inset)!important;box-sizing:border-box;background:none!important;box-shadow:none!important}
+html.borne .wrap>.b-doorrow>.b-door{grid-column:2;max-width:none}
+html.borne .b-door>.b-slot{width:clamp(200px,34cqw,260px)!important}
+html.borne .b-doorrow>.b-knobs{grid-column:3;justify-self:start}
+html.borne .b-knobs{gap:var(--s3)!important;padding:var(--s3) var(--s3) var(--s2);border-radius:4px;
+  background:radial-gradient(circle at 7px 7px,#4e4b46 0 2px,transparent 2.6px),radial-gradient(circle at calc(100% - 7px) 7px,#4e4b46 0 2px,transparent 2.6px),
+    radial-gradient(circle at 7px calc(100% - 7px),#4e4b46 0 2px,transparent 2.6px),radial-gradient(circle at calc(100% - 7px) calc(100% - 7px),#4e4b46 0 2px,transparent 2.6px),
+    repeating-linear-gradient(90deg,rgba(255,255,255,.07) 0 1px,transparent 1px 3px),linear-gradient(180deg,#c3c0ba,#99968f 55%,#7f7c76);
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.55),0 4px 10px rgba(0,0,0,.45)}
+html.borne .b-knobw{gap:var(--s1)!important}
+html.borne .b-knoblab{font-family:var(--f-eng)!important;color:var(--eng-plate)!important;font-weight:500}
+html.borne .wrap{padding-bottom:var(--s5)!important}
+@container cab (max-width:700px){
+  html.borne .b-doorrow{grid-template-columns:minmax(0,1fr)}
+  html.borne .b-doorrow>.b-door,html.borne .b-doorrow>.b-knobs{grid-column:1;justify-self:center}
+}
+@media (max-width:700px){html.borne .b-door>.b-slot{width:min(240px,70vw)!important}}
+
+/* ---------- 25 oct., 14 h 30 : copyright petit tout en bas, Burrows plus voyant, plaque Mauk Tenieb émaillée ---------- */
+html.borne .b-copy{order:99;margin:var(--s4) 0 0!important;padding:0 var(--inset) var(--s2)!important;background:none!important;box-shadow:none!important;
+  font-family:var(--f-eng);letter-spacing:.06em!important;line-height:1.4;text-align:center;color:rgba(235,225,205,.38)!important;opacity:1!important}
+
+html.borne .b-copy b{font-weight:400;color:inherit}
+html.borne[data-prog] .b-copy{display:none}
+
+html.borne .b-land{height:clamp(58px,8.5vh,84px)!important;filter:brightness(1.12) saturate(1.15);box-shadow:inset 0 0 0 1px rgba(0,0,0,.6),0 0 0 2px #0a0908,0 0 22px rgba(255,170,90,.28)!important}
+html.borne .b-land::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,rgba(8,6,5,.82) 0%,rgba(8,6,5,.45) 28%,transparent 52%)}
+html.borne .b-land span{font-size:clamp(1.7rem,4.4vh,2.6rem)!important;letter-spacing:.2em!important;color:#fff3dc!important;
+  text-shadow:0 0 10px rgba(255,150,70,.85),0 0 26px rgba(255,90,40,.55),0 2px 0 #000!important}
+@media (max-width:520px){html.borne .b-land{height:56px!important}html.borne .b-land span{font-size:1.6rem!important}}
+
+html.borne .b-plate .b-badge,html.borne .b-badge{width:auto!important;height:40px!important;padding:0 26px!important;border-radius:4px!important;
+  background:linear-gradient(180deg,#24201c,#0f0d0b)!important;
+  box-shadow:0 0 0 1px #000,0 0 0 3px #a8885a,0 0 0 4px #4a3a24,inset 0 1px 0 rgba(255,255,255,.08),0 5px 10px rgba(0,0,0,.55)!important;filter:none!important;position:relative}
+html.borne .b-badge::before,html.borne .b-badge::after{content:"";position:absolute;top:50%;width:6px;height:6px;margin-top:-3px;border-radius:50%;
+  background:radial-gradient(circle at 35% 35%,#f1dcae,#8c6c3e 60%,#3a2a16);box-shadow:0 1px 1px rgba(0,0,0,.6)}
+html.borne .b-badge::before{left:9px}html.borne .b-badge::after{right:9px}
+html.borne .b-plate .b-badge b,html.borne .b-badge b{font-family:var(--f-sign),"Bebas Neue",Impact,sans-serif!important;font-size:1.05rem!important;letter-spacing:.32em!important;margin-right:-.32em;
+  line-height:1;white-space:nowrap;color:#d9b97c!important;text-shadow:0 -1px 0 rgba(0,0,0,.9),0 1px 0 rgba(255,230,180,.18)!important}
+html.borne[data-skin="1960"] .b-copy{color:rgba(40,30,22,.55)!important}
+
+/* ---------- 25 oct., 15 h 50 : dans un appareil (VHS, Minitel, FotoFauna, FaunEye), le meuble garde son skin ; seul le cadre de l'écran prend l'habit de l'appareil ---------- */
+html.borne[data-skin=bois]:is([data-mode=device],[data-habit=fauneye]) .wrap{background-color:#2b1d14!important;background-image:url(skin-bois-flanc.webp)!important;background-size:384px 384px!important}
+html.borne[data-skin=bois]:is([data-mode=device],[data-habit=fauneye]) .b-panel{background:#1a1816 url(skin-bois-panneau.webp) center/cover no-repeat!important}
+html.borne[data-skin=metal]:is([data-mode=device],[data-habit=fauneye]) .wrap{background-color:#5d6166!important;background-image:url(skin-metal-flanc.webp)!important;background-size:384px 384px!important}
+html.borne[data-skin=metal]:is([data-mode=device],[data-habit=fauneye]) .b-panel{background:#3a3d41 url(skin-metal-panneau.webp) center/cover no-repeat!important}
+html.borne[data-skin="1960"]:is([data-mode=device],[data-habit=fauneye]) .wrap{background-color:#e8dcc2!important;background-image:url(skin-1960-flanc.webp)!important;background-size:496px 298px!important}
+html.borne[data-skin="1960"]:is([data-mode=device],[data-habit=fauneye]) .b-panel{background:#2a6f6a var(--v-panneau) center/cover no-repeat!important}
+html.borne[data-skin=metal] .b-slot b{left:5%!important;width:35%!important;gap:.4em!important;font-size:clamp(5.5px,.62vw,7px)!important;letter-spacing:0}
+
+/* ---------- 25 oct., 16 h : les Koins une seule fois, sous l'écran (à zéro, le décompte clignote) ; touches-pavés plus petites ---------- */
+html.borne .b-credit-scr{display:none!important}
+html.borne .b-bezelfoot #koins.wait{animation:bkwait 1.1s steps(2,jump-none) infinite}
+@keyframes bkwait{50%{color:#ff5a3c;box-shadow:0 0 12px rgba(255,90,60,.55)}}
+html.borne .b-panel .cabinets>.cab{width:80%;justify-self:center}
+@media (max-width:700px){html.borne .b-panel .cabinets>.cab{width:88%}}
+
+/* ---------- 25 oct., 16 h : le bloc son, une seule façade d'affichage (comme le compteur des Koins) : icône du juke-box, titre qui défile, cloche dessinée ; JACK THE BOX sur une languette chromée ---------- */
+html.borne{--lcd-bg:#0b0907;--lcd-ink:#ffb347;--lcd-dim:rgba(255,179,71,.45);--lcd-edge:#3a2e22}
+
+html.borne .bar .dock:first-of-type #radio-toggle{gap:8px!important;min-width:0;overflow:hidden}
+html.borne .bar .dock:first-of-type .b-bell{margin-left:-1px;}
+
+
+html.borne .b-bell.on{color:var(--lcd-ink)!important;text-shadow:none;filter:drop-shadow(0 0 4px color-mix(in srgb,var(--pal-accent,var(--pal-accent,#ffb347)) 70%,transparent))}
+html.borne .bar .dock:first-of-type #radio-note{color:var(--lcd-dim)!important;flex:none}
+html.borne .bar .dock:first-of-type #radio-note.on{color:var(--lcd-ink)!important;filter:drop-shadow(0 0 3px color-mix(in srgb,var(--pal-accent,var(--pal-accent,#ffb347)) 70%,transparent))}
+html.borne .bar .dock:first-of-type #radio-toggle .motel-l{display:block;min-width:0;flex:1;text-transform:uppercase;overflow:hidden;
+  }
+
+@keyframes bkrun{0%,12%{text-indent:0}88%,100%{text-indent:var(--sx)}}
+
+html.borne .bar .dock:first-of-type #export-pl:hover{filter:brightness(1.08)}
+@media (max-width:700px){
+  
+  html.borne .bar .dock:first-of-type #export-pl{margin-right:8px!important}
+  
+  
+}
+
+/* ---------- éclats et reflets ---------- */
+html.borne .b-gl{position:absolute;inset:0;border-radius:inherit;overflow:hidden;pointer-events:none;z-index:5;text-decoration:none}
+html.borne .b-gl::before{content:"";position:absolute;top:-20%;bottom:-20%;left:-60%;width:40%;transform:skewX(-20deg) translateX(0);opacity:0;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.55) 45%,rgba(255,255,255,.9) 50%,rgba(255,255,255,.55) 55%,transparent);mix-blend-mode:screen}
+html.borne .b-gl::after{content:"";position:absolute;right:14%;top:12%;width:12px;height:12px;opacity:0;transform:scale(.2) rotate(0);
+  background:radial-gradient(circle,#fff 0 1.5px,transparent 2px),linear-gradient(90deg,transparent 45%,rgba(255,255,255,.95) 50%,transparent 55%),linear-gradient(0deg,transparent 45%,rgba(255,255,255,.95) 50%,transparent 55%);filter:drop-shadow(0 0 3px #fff)}
+html.borne .b-gl.on::before{animation:bglsweep .9s cubic-bezier(.4,0,.2,1)}
+html.borne .b-gl.on::after{animation:bglstar .9s ease-out .35s}
+@keyframes bglsweep{0%{opacity:0;left:-60%}15%{opacity:1}100%{opacity:0;left:130%}}
+@keyframes bglstar{0%{opacity:0;transform:scale(.2) rotate(0)}40%{opacity:1;transform:scale(1) rotate(45deg)}100%{opacity:0;transform:scale(.3) rotate(90deg)}}
+html.borne .b-row2 .menu a,html.borne .b-knob,html.borne .b-slot,html.borne #koins,html.borne .b-boom{position:relative}
+html.borne .b-row2 .menu a .b-gl,html.borne .b-knob .b-gl{border-radius:50%}
+html.borne .b-sheen{position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:3;text-decoration:none;mix-blend-mode:soft-light;
+  background:linear-gradient(115deg,transparent calc(var(--rx,.5)*100% - 38%),rgba(255,255,255,.75) calc(var(--rx,.5)*100% - 6%),rgba(255,255,255,.95) calc(var(--rx,.5)*100%),rgba(255,255,255,.6) calc(var(--rx,.5)*100% + 6%),transparent calc(var(--rx,.5)*100% + 34%))}
+html.borne .b-lore .b-sheen{mix-blend-mode:overlay;background:linear-gradient(115deg,transparent calc(var(--rx,.5)*100% - 40%),rgba(255,170,230,.45) calc(var(--rx,.5)*100% - 14%),rgba(255,255,255,.9) calc(var(--rx,.5)*100%),rgba(150,230,255,.45) calc(var(--rx,.5)*100% + 14%),transparent calc(var(--rx,.5)*100% + 40%))}
+html.borne .b-badge .b-sheen{mix-blend-mode:screen;opacity:.35}
+@media (prefers-reduced-motion:reduce){html.borne .b-gl,html.borne .b-sheen{display:none}}
+
+/* ---------- blocs aimantés : saisis, ils s'aspirent vers le doigt ; posés, ils claquent en place ---------- */
+html.borne .b-mag{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+html.borne .b-mag.b-held{z-index:80!important;cursor:grabbing!important;filter:drop-shadow(0 18px 22px rgba(0,0,0,.55)) brightness(1.06);animation:bsuck .22s cubic-bezier(.3,1.6,.5,1) both}
+html.borne .b-mag.b-held.b-docked{filter:drop-shadow(0 4px 6px rgba(0,0,0,.5)) drop-shadow(0 0 10px rgba(255,214,140,.6))}
+@keyframes bsuck{0%{scale:1}35%{scale:.93}100%{scale:1.06}}
+html.borne .b-mag:not(.b-held){scale:1;transition:scale .25s cubic-bezier(.2,1.5,.4,1)}
+html.borne.b-holding,html.borne.b-holding *{cursor:grabbing!important}
+
+/* ---------- la manette sert : la boule se saisit, le socle déplace ; la touche choisie à la manette s'allume ---------- */
+html.borne .b-panel .cabinets>.b-stick{cursor:grab;touch-action:none}
+html.borne .b-stick.b-grip{cursor:grabbing}
+
+html.borne .b-panel .cab.b-sel{outline:2px solid #ffd27a;outline-offset:4px;filter:brightness(1.15)}
+html.borne #kg-root .b-fit{will-change:transform}
+html.borne #kg-root .b-fitting,html.borne #kg-root .b-fitting *{transition:none!important;animation-play-state:paused!important}
+
+/* ---------- la Koin animée : une pièce qui tourne sur elle-même (tranche dorée, reflet qui passe) ---------- */
+html.borne .b-kspin{display:inline-block;width:40px;height:40px;perspective:240px;pointer-events:none;vertical-align:middle}
+html.borne .b-kspin i{display:block;width:100%;height:100%;background:url(koin.webp) center/contain no-repeat;border-radius:50%;
+  filter:drop-shadow(0 2px 2px rgba(0,0,0,.55));animation:bkturn 3.2s cubic-bezier(.45,0,.55,1) infinite;transform-style:preserve-3d}
+@keyframes bkturn{0%{transform:rotateY(0)}50%{transform:rotateY(180deg);filter:drop-shadow(0 2px 2px rgba(0,0,0,.55)) brightness(.78) sepia(.25)}100%{transform:rotateY(360deg)}}
+html.borne .b-kicon{width:18px;height:18px;margin:-4px 6px 0 2px}
+html.borne .b-kicon i{animation-duration:5.5s}
+html.borne .b-kicon.b-kgo i{animation:bkturn .45s linear 3,bkpop .5s ease-out}
+@keyframes bkpop{40%{scale:1.5}}
+html.borne .b-kfly{position:fixed;z-index:9998;width:40px;height:40px}
+html.borne .b-kfly i{animation-duration:.42s;animation-timing-function:linear}
+html.borne .b-kslot{position:absolute;left:50%;top:-34px;width:30px;height:30px;margin-left:-15px;z-index:4}
+html.borne .b-kslot i{animation:bkturn .3s linear infinite}
+html.borne .b-kslot{animation:bkdrop .62s cubic-bezier(.5,0,.8,.4) forwards}
+@keyframes bkdrop{70%{transform:translateY(46px);clip-path:inset(0 0 0 0)}100%{transform:translateY(62px);clip-path:inset(0 0 100% 0)}}
+html.borne .b-slot .b-coin{display:none!important}
+@media (prefers-reduced-motion:reduce){html.borne .b-kspin i{animation:none}}
+
+/* ---------- la plaque Mauk Tenieb : un halo doré passe de temps en temps ---------- */
+html.borne .b-plate .b-badge{animation:bplate 9s ease-in-out infinite}
+html.borne .b-plate .b-badge::after{}
+@keyframes bplate{0%,70%,100%{box-shadow:0 0 0 1px #000,0 0 0 3px #a8885a,0 0 0 4px #4a3a24,inset 0 1px 0 rgba(255,255,255,.08),0 5px 10px rgba(0,0,0,.55),0 0 0 rgba(255,200,90,0)}
+  80%{box-shadow:0 0 0 1px #000,0 0 0 3px #e9c47a,0 0 0 4px #6a5230,inset 0 1px 0 rgba(255,255,255,.12),0 5px 10px rgba(0,0,0,.55),0 0 26px 6px rgba(255,200,90,.55)}
+  88%{box-shadow:0 0 0 1px #000,0 0 0 3px #c9a466,0 0 0 4px #5a4428,inset 0 1px 0 rgba(255,255,255,.1),0 5px 10px rgba(0,0,0,.55),0 0 12px 2px rgba(255,200,90,.25)}}
+html.borne .b-plate .b-badge b{animation:bplateink 9s ease-in-out infinite}
+@keyframes bplateink{0%,70%,100%{color:#d9b97c;text-shadow:0 -1px 0 rgba(0,0,0,.9),0 1px 0 rgba(255,230,180,.18)}80%{color:#ffe2a6;text-shadow:0 -1px 0 rgba(0,0,0,.9),0 0 10px rgba(255,210,120,.8)}}
+@media (prefers-reduced-motion:reduce){html.borne .b-plate .b-badge,html.borne .b-plate .b-badge b{animation:none}}
+html.b-charte #mem .m-btn{padding:.9em 18px!important;font-size:13px!important}
+
+
+/* ---------- MaskerMind : une partie des pions, tirée au hasard à chaque partie, sont des Koins teintés à la couleur de leur Mask ; les autres gardent le signe échiquéen ---------- */
+html.borne #mm-panel .mm-peg.b-koin:not(.mm-empty){background-image:url(koin.webp)!important;background-size:112% 112%!important;background-position:center!important;background-repeat:no-repeat!important;
+  background-blend-mode:luminosity!important;border-radius:50%!important;box-shadow:inset 0 0 0 1px rgba(0,0,0,.35),inset 0 2px 3px rgba(255,255,255,.35),0 2px 3px rgba(0,0,0,.6)!important;color:#1a1208!important}
+html.borne #mm-panel .mm-peg.b-koin:not(.mm-empty) svg,html.borne #mm-panel .mm-peg.b-koin:not(.mm-empty) *{filter:drop-shadow(0 1px 0 rgba(255,255,255,.35))}
+html.b-charte #mem h1{font-size:clamp(56px,14vw,96px)!important}
+
+/* ---------- la manette à ressort : le ressort pilote l'angle, sans transition ; la tige s'étire un peu avec la vitesse ---------- */
+html.borne .b-stick i,html.borne .b-stick.b-grip i{transition:none!important}
+html.borne .b-stick i{transform:rotate(calc(var(--x) * 14deg))!important;transform-origin:50% 74%!important}/* 1er nov., 11 h : d'un bloc, sans écrasement */
+
+/* ---------- online : une diode et un chiffre, gravés discrètement au pied de l'écran ---------- */
+html.borne .b-online{display:flex;align-items:center;gap:6px;margin:0 auto;font-family:'DM Mono',ui-monospace,monospace;letter-spacing:.16em;text-transform:uppercase;white-space:nowrap;pointer-events:auto;cursor:default}
+html.borne .b-online i{width:5px;height:5px;border-radius:50%;background:#5dff8a;box-shadow:0 0 6px #5dff8a;animation:bonline 2.4s ease-in-out infinite}
+html.borne .b-online b{font-weight:500;color:rgba(235,225,205,.7)}
+@keyframes bonline{50%{opacity:.35;box-shadow:0 0 2px #5dff8a}}
+@media (max-width:520px){html.borne .b-online span{display:none}}
+
+/* ---------- enfoncements : la touche descend sous le doigt (elle rétrécit, son ombre se tasse), remonte en rebondissant ---------- */
+html.borne .b-panel .cab.b-down{filter:brightness(1.18)!important;transition:scale .04s ease-out}
+html.borne .b-panel .cab.b-down::before{opacity:1!important}
+
+@keyframes bkeyup{0%{scale:.955}45%{scale:1.02}70%{scale:.995}100%{scale:1}}
+html.borne .b-row2 .menu a.b-down{filter:brightness(1.25)}
+html.borne .b-row2 .menu a.b-up{animation:bkeyup .38s cubic-bezier(.2,1.8,.4,1)}
+
+/* ---------- l'enseigne, en lettres d'arcade (Bungee, OFL) : remplissage clair, contour sombre, relief en escalier, néon autour ; centrée ; ampoules qui courent sur le cadre ---------- */
+@font-face{font-family:'Bungee';src:url(font-bungee.woff2) format('woff2');font-display:swap}
+@font-face{font-family:'Bungee Inline';src:url(font-bungee-inline.woff2) format('woff2');font-display:swap}
+html.borne{--sg-fill:#fff1c2;--sg-line:#5a1206;--sg-x1:#c9420f;--sg-x2:#7a1d06;--sg-glow:rgba(255,150,40,.75);--sg-bulb:#ffd36e}
+html.borne[data-skin=metal]{--sg-fill:#ffecc4;--sg-line:#3a1a06;--sg-x1:#c25a12;--sg-x2:#6a2a06;--sg-glow:rgba(255,140,40,.75);--sg-bulb:#ffcf7a}
+html.borne[data-skin="1960"]{--sg-fill:#fff6dc;--sg-line:#6a0d06;--sg-x1:#d6261a;--sg-x2:#7c0f08;--sg-glow:rgba(255,90,60,.7);--sg-bulb:#ffe7a8}
+html.borne .bar .brand{position:relative;display:grid!important;place-items:center;text-align:center!important;padding:6px 14px!important;overflow:hidden;
+  font-family:'Bungee',var(--f-sign),Impact,sans-serif!important;font-weight:400!important;font-size:clamp(1.15rem,min(4.4vh,2.7vw),2.7rem)!important;letter-spacing:.03em!important;line-height:1!important;
+  color:var(--sg-fill)!important;-webkit-text-stroke:2px var(--sg-line);paint-order:stroke fill;
+  text-shadow:1px 1px 0 var(--sg-x1),2px 2px 0 var(--sg-x1),3px 3px 0 var(--sg-x2),4px 4px 0 var(--sg-x2),5px 5px 6px rgba(0,0,0,.55),0 0 18px var(--sg-glow),0 0 42px var(--sg-glow)!important;
+  animation:bsign 7s steps(1) infinite}
+@keyframes bsign{0%,100%{opacity:1}91%{opacity:1}91.6%{opacity:.55}92.2%{opacity:1}93%{opacity:.7}93.4%{opacity:1}}
+html.borne .bar .brand::after{content:"";position:absolute;inset:5px;border-radius:5px;pointer-events:none;
+  background:radial-gradient(circle,var(--sg-bulb) 0 2.2px,transparent 3px) 0 0/14px 14px;opacity:.95;
+  -webkit-mask:linear-gradient(#000 0 0) top/100% 11px no-repeat,linear-gradient(#000 0 0) bottom/100% 11px no-repeat,linear-gradient(#000 0 0) left/11px 100% no-repeat,linear-gradient(#000 0 0) right/11px 100% no-repeat;
+  mask:linear-gradient(#000 0 0) top/100% 11px no-repeat,linear-gradient(#000 0 0) bottom/100% 11px no-repeat,linear-gradient(#000 0 0) left/11px 100% no-repeat,linear-gradient(#000 0 0) right/11px 100% no-repeat;
+  filter:drop-shadow(0 0 3px var(--sg-bulb));animation:bbulbs 1.1s steps(2) infinite}
+@keyframes bbulbs{50%{background-position:7px 7px}}
+html.borne .bar .brand .b-habit{position:absolute;left:0;right:0;bottom:6px;-webkit-text-stroke:0;text-shadow:none}
+@media (prefers-reduced-motion:reduce){html.borne .bar .brand,html.borne .bar .brand::after{animation:none}}
+
+/* ---------- le bloc son : les haut-parleurs d'abord ; une seule bande fine au pied du haut-parleur gauche : titre, JACK THE BOX gravé, cloche ---------- */
+html.borne .bar .dock:first-of-type #radio-note{display:none!important}
+html.borne .bar .dock:first-of-type{display:grid!important;grid-template-rows:1fr 30px!important;align-items:end}
+html.borne .bar .dock:first-of-type #radio-toggle{grid-row:2!important;grid-column:1!important;height:30px!important;min-height:30px!important;}
+
+html.borne .bar .dock:first-of-type #export-pl{grid-row:2!important;align-self:stretch;align-items:center;box-sizing:border-box;
+  
+  }
+
+html.borne .bar .dock:first-of-type .b-bell{grid-row:2!important;}
+
+@media (max-width:700px){
+  html.borne .bar .dock:first-of-type{grid-template-rows:1fr 30px!important;padding:6px!important}
+  html.borne .bar .dock:first-of-type #radio-toggle,html.borne .bar .dock:first-of-type #export-pl,html.borne .bar .dock:first-of-type .b-bell{grid-row:2!important;margin:0!important}
+  
+  html.borne .bar .dock:first-of-type #radio-toggle{grid-column:1!important}
+}
+
+/* ---------- Immersion ---------- */
+html.borne .b-imm{display:flex;align-items:center;gap:6px;height:30px;padding:0 10px;margin-right:10px;border:0;cursor:pointer;
+  font:500 9px/1 'DM Mono',monospace;letter-spacing:.16em}
+html.borne .b-imm i{width:12px;height:9px;border:1.5px solid currentColor;border-radius:1px;box-sizing:border-box;position:relative}
+
+@media (max-width:520px){html.borne .b-imm span{display:none}}
+html.borne .b-imm-x{display:none}
+html.borne.b-immersion,html.borne.b-immersion body{overflow:hidden!important;background:#000!important}
+html.borne.b-immersion .b-glass{position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important;max-width:none!important;border-radius:0!important;z-index:9000!important;margin:0!important}
+html.borne.b-immersion .b-imm-x{display:grid;place-items:center;position:absolute;top:max(10px,env(safe-area-inset-top));right:max(10px,env(safe-area-inset-right));z-index:99;width:44px;height:44px;border:0;border-radius:50%;
+  background:rgba(0,0,0,.45);color:rgba(255,255,255,.7);font-size:16px;cursor:pointer;opacity:.35;transition:opacity .2s}
+html.borne.b-immersion .b-imm-x:hover{opacity:1}
+html.borne.b-immersion .b-edge{opacity:.25}
+
+/* ---------- Lore collé sur la caisse à pièces (une arrivée sur deux) ---------- */
+html.borne .b-slot .b-lore.b-onbox{position:absolute;left:var(--lx,20%);top:var(--ly,10%);z-index:6;font-size:.9rem!important;
+  filter:drop-shadow(0 1px 1px rgba(0,0,0,.55)) drop-shadow(1px 3px 4px rgba(0,0,0,.35))}
+
+html.borne .b-mix{background:radial-gradient(circle at 40% 35%,#5a5a5a,#111 70%)!important}
+html.borne .b-mix[data-on="1"]{rotate:120deg}
+html.borne .b-mix{transition:rotate .35s cubic-bezier(.2,1.6,.4,1)}
+/* Lore : sur la caisse, un éclat passe de temps en temps */
+html.borne .b-lore.b-onbox{animation:bloreglow 7s ease-in-out infinite}
+@keyframes bloreglow{0%,82%,100%{filter:drop-shadow(0 1px 1px rgba(0,0,0,.55)) drop-shadow(1px 3px 4px rgba(0,0,0,.35))}88%{filter:drop-shadow(0 1px 1px rgba(0,0,0,.55)) drop-shadow(0 0 10px rgba(255,190,240,.95)) brightness(1.25)}}
+
+/* ---------- Dekonect : un aimant gravé sur la caisse ---------- */
+
+html.borne .b-dekonect{position:absolute;border:0;background:none;cursor:pointer;
+  transition:color .2s,filter .2s}
+html.borne[data-skin=bois] .b-dekonect,html.borne[data-skin=metal] .b-dekonect{color:rgba(0,0,0,.6)}
+html.borne .b-dekonect svg{width:100%;height:100%}
+html.borne .b-dekonect:hover,html.borne .b-dekonect:focus-visible{color:#c9302a;}
+html.borne .b-dekonect:active{scale:.9}
+
+
+/* ---------- l'enseigne change de nom en douceur ---------- */
+html.borne .bar .brand{transition:color 1.1s ease,text-shadow 1.1s ease,filter 1.1s ease}
+html.borne .bar .brand.b-dim{color:color-mix(in srgb,var(--sg-fill) 35%,#000)!important;filter:brightness(.55) saturate(.6)!important;
+  text-shadow:1px 1px 0 var(--sg-x2),2px 2px 0 var(--sg-x2),3px 3px 4px rgba(0,0,0,.5)!important;transition:color .8s ease,text-shadow .8s ease,filter .8s ease}
+
+/* ---------- module des haut-parleurs : titre en téléprompteur, PL, haut-parleur barré bien lisible ---------- */
+html.borne .bar .dock:first-of-type #radio-toggle .motel-l{-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 10px,#000 calc(100% - 10px),transparent)!important;mask-image:linear-gradient(90deg,transparent 0,#000 10px,#000 calc(100% - 10px),transparent)!important;white-space:nowrap}
+html.borne .bar .dock:first-of-type #radio-toggle .motel-l.b-run{animation:bkprompt var(--sd,10s) linear infinite!important}
+@keyframes bkprompt{from{text-indent:var(--w,200px)}to{text-indent:var(--sx,-200px)}}
+
+html.borne .bar .dock:first-of-type #export-pl:hover{opacity:1;text-shadow:0 0 6px color-mix(in srgb,var(--pal-accent,var(--pal-accent,#ffb347)) 70%,transparent)!important}
+
+
+html.borne .b-bell svg .w1,html.borne .b-bell svg .w2{opacity:0;transition:opacity .25s}
+html.borne .b-bell svg .x{opacity:1;transition:opacity .2s}
+html.borne .b-bell.on svg .x{opacity:0}
+html.borne .b-bell.on svg .w1,html.borne .b-bell.on svg .w2{opacity:1}
+html.borne .bar .dock:first-of-type .b-bell.on{color:var(--lcd-ink)!important;filter:drop-shadow(0 0 5px color-mix(in srgb,var(--pal-accent,var(--pal-accent,#ffb347)) 80%,transparent))}
+html.borne .b-bell.on svg .w2{animation:bwave 1.2s ease-in-out infinite}
+@keyframes bwave{50%{opacity:.35}}
+/* ---------- la butée : le rebord qui avance au-dessus de l'écran (bois, métal) ---------- */
+html.borne .b-butee{display:none}
+html.borne:is([data-skin=bois],[data-skin=metal]):not([data-prog]) .b-butee{display:block;position:relative;z-index:4;height:clamp(22px,3.4vh,34px);margin:4px -10px -10px;background-position:center top;background-size:100% 100%;background-repeat:no-repeat;filter:drop-shadow(0 8px 6px rgba(0,0,0,.55))}
+html.borne[data-skin=bois] .b-butee{background-image:url(butee-bois.webp)}
+html.borne[data-skin=metal] .b-butee{background-image:url(butee-metal.webp)}
+
+
+/* ---------- la manette à l'échelle des touches : un peu plus haute qu'elles ---------- */
+html.borne .b-panel .cabinets>.b-stick{height:auto!important;aspect-ratio:76/100!important}
+@media (max-width:700px){html.borne .b-panel .cabinets>.b-stick{width:clamp(66px,22vw,100px)!important}}
+
+
+/* ---------- perspective unique du panneau : on le regarde de face, un peu d'en haut, comme les boutons BC TL IG et la manette ---------- */
+html.borne .b-panel .cabinets>.cab,html.borne .b-panel .b-sub .cab{transform-origin:50% 100%;transform:none!important;
+  box-shadow:0 0 0 2px #050505,inset 0 1px 0 rgba(255,255,255,.16),0 9px 0 #0a0908,0 10px 0 #000,0 16px 20px rgba(0,0,0,.55)!important}
+html.borne .b-panel .cabinets>.cab:nth-child(1),html.borne .b-panel .cabinets>.cab:last-child{transform:none!important}
+html.borne .b-panel .cab.b-down{scale:1!important;transform:translateY(3px)!important;box-shadow:0 0 0 2px #050505,inset 0 1px 0 rgba(255,255,255,.1),0 3px 0 #0a0908,0 4px 0 #000,0 7px 10px rgba(0,0,0,.5)!important}
+html.borne .b-panel .cabinets>.cab:nth-child(1).b-down,html.borne .b-panel .cabinets>.cab:last-child.b-down{transform:translateY(3px)!important}
+html.borne .b-panel .cab.b-up{animation:none!important}
+/* plaque Mauk Tenieb vissée dans le bois (LISTE 58) : lumière d'en haut comme sur la caisse, tranche de 2 px sous le cadre laiton, ombre de contact courte, zéro halo */
+html.borne .b-plate .b-badge{transform:none!important;box-shadow:0 0 0 1px #000,0 0 0 3px #a8885a,0 -1px 0 3px #d9bb84,0 0 0 4px #4a3a24,0 2px 0 4px #2c1f0f,0 4px 2px 4px rgba(0,0,0,.55),0 9px 9px 2px rgba(0,0,0,.32),inset 0 1px 0 rgba(255,232,190,.16),inset 0 -3px 5px rgba(0,0,0,.45)!important;animation:none}
+html.borne .b-plate .b-badge b{animation:none}
+html.borne .b-badge .b-sheen{display:none}
+
+/* ---------- bloc son refait : une fenêtre d'affichage sous verre fumé (fluorescent ambre, trame de points), deux touches physiques à côté ---------- */
+html.borne .bar .dock:first-of-type{grid-template-columns:minmax(0,1fr) 34px 34px!important;column-gap:5px!important}
+html.borne .bar .dock:first-of-type #radio-toggle{position:relative;border-radius:var(--b-kr,3px)!important;padding:0 10px!important;
+  background:radial-gradient(ellipse at 50% 120%,rgba(255,150,40,.10),transparent 70%),#070605!important;
+  box-shadow:inset 0 2px 4px rgba(0,0,0,.95),inset 0 0 0 1px rgba(0,0,0,.9),0 1px 0 rgba(255,255,255,.14),0 -1px 0 rgba(0,0,0,.5)!important}
+html.borne .bar .dock:first-of-type #radio-toggle::after{content:"";position:absolute;inset:0;border-radius:3px;pointer-events:none;
+  background:linear-gradient(170deg,rgba(255,255,255,.13) 0%,rgba(255,255,255,.03) 38%,transparent 40%),radial-gradient(circle,rgba(0,0,0,.55) .6px,transparent 1.1px) 0 0/3px 3px}
+html.borne .bar .dock:first-of-type #radio-toggle .motel-l{font-family:'DM Mono',monospace!important;font-weight:500;color:var(--pal-accent,#ffb54a)!important;
+  text-shadow:0 0 2px #ff9a2a,0 0 8px rgba(255,140,30,.7)!important}
+html.borne .bar .dock:first-of-type #export-pl,html.borne .bar .dock:first-of-type .b-bell{position:relative;width:34px!important;height:30px!important;min-height:30px!important;padding:0!important;margin:0!important;
+  display:grid!important;place-items:center;border-radius:var(--b-kr,4px)!important;cursor:pointer;
+  background:linear-gradient(180deg,#3a3633 0%,#22201e 55%,#171513 100%)!important;color:#d9cfbf!important;opacity:1!important;filter:none!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.22),inset 0 -2px 0 rgba(0,0,0,.5),0 0 0 1px #000,0 3px 0 #0b0a09,0 4px 6px rgba(0,0,0,.6)!important;
+  font-family:'DM Mono',monospace!important;font-weight:600;font-size:10px!important;letter-spacing:.06em!important;text-shadow:0 -1px 0 rgba(0,0,0,.8)!important;transition:transform .06s,box-shadow .06s}
+html.borne .bar .dock:first-of-type #export-pl:active,html.borne .bar .dock:first-of-type .b-bell:active{transform:translateY(2px);box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 0 0 1px #000,0 1px 0 #0b0a09,0 2px 3px rgba(0,0,0,.6)!important}
+html.borne .bar .dock:first-of-type #export-pl:hover,html.borne .bar .dock:first-of-type .b-bell:hover{color:#fff4e0!important}
+html.borne .bar .dock:first-of-type .b-bell svg{width:16px!important;height:16px!important;color:#d9cfbf}
+html.borne .bar .dock:first-of-type .b-bell.on svg{color:#ffd9a0}
+/* le voyant : rouge au silence, ambre quand le son passe */
+html.borne .bar .dock:first-of-type .b-bell::before{content:"";position:absolute;top:3px;right:3px;width:5px;height:5px;border-radius:50%;
+  background:#ff2a1a;box-shadow:0 0 4px #ff2a1a,0 0 8px rgba(255,42,26,.7)}
+html.borne .bar .dock:first-of-type .b-bell.on::before{background:#ffb02a;box-shadow:0 0 4px #ffb02a,0 0 9px rgba(255,176,42,.8);animation:bled 1.6s ease-in-out infinite}
+@keyframes bled{50%{opacity:.55}}
+html.borne .bar .dock:first-of-type .b-bell svg .x{color:#ff5a46}
+@media (max-width:700px){html.borne .bar .dock:first-of-type{grid-template-columns:minmax(0,1fr) 34px 34px!important}}
+
+/* ---------- la console en vraie perspective : une tablette inclinée qui avance vers le joueur, plus large devant ; rebord avant épais ---------- */
+html.borne[data-skin=bois]{--pan:url(skin-bois-panneau.webp);--pan-c:#1a1816;--pan-lip:#0e0c0a}
+html.borne[data-skin=metal]{--pan:url(skin-metal-panneau.webp);--pan-c:#1c1a18;--pan-lip:#0c0b0a}
+html.borne .b-panel{background:transparent!important;isolation:isolate;border-top:0!important;box-shadow:none!important;padding-bottom:calc(var(--s3,12px) + 16px)!important}
+html.borne .b-panel::before{content:"";position:absolute;top:0;bottom:14px;z-index:-1;transform-origin:50% 0;
+  
+  border-radius:4px 4px 2px 2px;box-shadow:inset 0 3px 6px rgba(0,0,0,.6)}
+html.borne .b-panel::after{content:"";position:absolute;left:-3.2%;right:-3.2%;bottom:0;z-index:-1;border-radius:0 0 10px 10px;
+  }
+html.borne .b-panel .cabinets,html.borne .b-panel .b-sub,html.borne .b-plate{perspective:700px;perspective-origin:50% -40%}
+@media (max-width:700px){html.borne .b-panel .cabinets>.cab:nth-child(1),html.borne .b-panel .cabinets>.cab:last-child{transform:none!important}
+  html.borne .b-panel .cabinets>.cab:nth-child(1).b-down,html.borne .b-panel .cabinets>.cab:last-child.b-down{transform:translateY(3px)!important}}
+
+/* ---------- l'autocollant Lore de Midjourney : le mot est dans l'image ---------- */
+html.borne .b-lore .b-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+html.borne .b-slot .b-lore.b-onbox,html.borne .b-lore{aspect-ratio:600/262;height:auto!important;padding:0!important}
+html.borne .b-slot .b-lore.b-onbox{width:104px!important}
+@media (max-width:700px){html.borne .b-slot .b-lore.b-onbox{width:92px!important}}
+
+/* ---------- molettes à crans : elles tournent par à-coups, dépassent un peu et se calent ---------- */
+html.borne .b-knob{transition:transform .32s steps(4,jump-end)!important}
+html.borne .b-skin[data-pos="0"]{transform:rotate(-80deg)}
+html.borne .b-skin[data-pos="1"]{transform:rotate(-10deg)}
+html.borne .b-skin[data-pos="2"]{transform:rotate(60deg)}
+html.borne .b-knob.b-cran{animation:bcran .34s cubic-bezier(.3,1.8,.5,1)}
+@keyframes bcran{0%{scale:1}30%{scale:.94}100%{scale:1}}
+
+/* ---------- vie lumineuse : plus de reflet qui passe ; l'élément s'allume légèrement de l'intérieur, puis s'éteint ---------- */
+html.borne .b-gl{display:none!important}
+html.borne .b-panel .cab{--glow:var(--nc,#ffb347)}
+html.borne .b-row2 .menu a{--glow:var(--mc,#ffb347)}
+html.borne .b-row2 .menu a[href*=threadless]{--glow:#ff6a3c}html.borne .b-row2 .menu a[href*=instagram]{--glow:#ff8ac0}html.borne .b-row2 .menu a[href*=bandcamp]{--glow:#3fd7e8}
+html.borne .b-slot{--glow:#ff8a2a}html.borne #koins{--glow:#ffb02a}html.borne .b-boom{--glow:#ff3b2a}html.borne .b-knob{--glow:#ffd38a}
+html.borne .b-alive{animation:balive var(--alive,3.4s) ease-in-out}
+@keyframes balive{0%,100%{filter:brightness(1)}45%{filter:brightness(1.22) saturate(1.12) drop-shadow(0 0 6px color-mix(in srgb,var(--glow) 70%,transparent)) drop-shadow(0 0 18px color-mix(in srgb,var(--glow) 35%,transparent))}}
+html.borne .b-panel .cab.b-alive::before{animation:balivecap var(--alive,3.4s) ease-in-out}
+@keyframes balivecap{0%,100%{opacity:.82}45%{opacity:1}}
+@media (prefers-reduced-motion:reduce){html.borne .b-alive,html.borne .b-alive::before{animation:none}}
+
+/* ---------- téléscripteur du morceau ---------- */
+html.borne .bar .dock:first-of-type #radio-toggle .motel-l{text-indent:0!important;animation:none!important;text-overflow:clip!important}
+
+/* ---------- molettes : aucune surbrillance bleue, la molette tourne, c'est tout ; VOL à trois crans ---------- */
+html.borne .b-knob{-webkit-tap-highlight-color:transparent;outline:none!important;-webkit-user-select:none;user-select:none}
+html.borne .b-knob:focus,html.borne .b-knob:focus-visible,html.borne .b-knob:active{outline:none!important;box-shadow:none!important;background-color:transparent!important}
+html.borne .b-knobw{-webkit-tap-highlight-color:transparent}
+
+html.borne #snd.b-knob[data-pos="1"]{transform:rotate(-10deg)}
+
+html.borne .b-row2 .menu,html.borne .b-row2{perspective:700px;perspective-origin:50% -40%}
+html.borne .b-row2 .menu a{transform:none;transform-origin:50% 70%}
+html.borne .b-row2 .menu a.b-down{transform:translateY(3px)!important;scale:1!important}
+
+/* ---------- gros plan sur la Koin ---------- */
+html.borne .b-kveil{position:fixed;inset:0;z-index:99990;pointer-events:none;background:radial-gradient(circle at 50% 50%,rgba(255,180,60,.16),rgba(0,0,0,.55) 70%)}
+html.borne .b-kbig{position:fixed;z-index:99991;pointer-events:none;perspective:900px}
+html.borne .b-kbig i{position:absolute;inset:0;background:center/contain no-repeat;filter:drop-shadow(0 18px 24px rgba(0,0,0,.6)) drop-shadow(0 0 30px rgba(255,190,80,.35));transform-style:preserve-3d;backface-visibility:visible}
+html.borne .b-kbig s{position:absolute;inset:6%;border-radius:50%;pointer-events:none;mix-blend-mode:screen;text-decoration:none;
+  background:linear-gradient(105deg,transparent 40%,rgba(255,255,230,.75) 50%,transparent 60%) -120% 0/250% 100% no-repeat}
+
+/* ---------- Lore : rien d'autre que l'autocollant (zéro rectangle, zéro reflet carré) ; il tourne ---------- */
+html.borne .b-lore .b-sheen{display:none!important}
+html.borne .b-lore{background-color:transparent!important;box-shadow:none!important;border:0!important;border-radius:0!important;outline:none!important;-webkit-tap-highlight-color:transparent;touch-action:none}
+html.borne .b-slot .b-lore.b-onbox,html.borne .b-slot .b-lore.b-onbox:hover{transform:rotate(var(--lr,-6deg))!important}
+
+/* ---------- touches nettes : zéro reflet qui ondule ; elles s'allument plus souvent, parfois avec un petit clignement ---------- */
+html.borne .b-sheen{display:none!important}
+html.borne .b-panel .cab::after{background:none!important;opacity:0!important}
+html.borne .b-alive.b-flick{animation:bflick var(--alive,2.4s) steps(1,end)}
+@keyframes bflick{0%,100%{filter:brightness(1)}8%{filter:brightness(1.3) drop-shadow(0 0 8px color-mix(in srgb,var(--glow) 70%,transparent))}14%{filter:brightness(1)}22%,70%{filter:brightness(1.24) saturate(1.1) drop-shadow(0 0 7px color-mix(in srgb,var(--glow) 65%,transparent)) drop-shadow(0 0 18px color-mix(in srgb,var(--glow) 30%,transparent))}}
+
+/* ---------- SON : deux crans, coupé ou ouvert ---------- */
+html.borne #snd.b-knob[data-pos="0"]{transform:rotate(-60deg)}
+html.borne #snd.b-knob[data-pos="2"]{transform:rotate(40deg)}
+/* ---------- l'aimant à droite de la machine, même hauteur ---------- */
+html.borne .b-dekonect{left:auto!important;}
+/* ---------- la manette : socle fixe, seule la tige et la boule penchent ; l'ombre de la boule glisse sur le panneau, à l'opposé de la lumière ---------- */
+html.borne .b-panel .cabinets>.b-stick{position:relative}
+html.borne .b-panel .cabinets>.b-stick::before{content:none!important;display:none!important;position:absolute;inset:0;z-index:0;left:0!important;right:0!important;bottom:0!important;height:auto!important;border-radius:0!important;box-shadow:none!important;
+  background:var(--i-stick) center bottom/contain no-repeat!important;clip-path:inset(var(--stk-cut,60%) 0 0 0)}
+html.borne .b-panel .cabinets>.b-stick i{z-index:1;filter:none!important;left:0;top:0;bottom:auto;width:100%;height:100%}
+/* 1er nov. (E42) : le levier occupe le cadre exact du socle ; boule, tige et anneau tirés de la même image, à la même échelle */
+html.borne .b-panel .cabinets>.b-stick::after{content:"";position:absolute;z-index:0;left:50%;bottom:calc(100% - var(--stk-cut,60%) - 6%);width:46%;height:12%;border-radius:50%;pointer-events:none;
+  background:radial-gradient(ellipse,rgba(0,0,0,.55),transparent 70%);transform:translateX(calc(-50% + var(--x,0) * 26px)) scaleX(calc(1 + var(--v,0) * .3));filter:blur(2px)}
+/* ---------- les touches de la borne sans le numéro d'ordre des anciennes tuiles d'Insert Koin ---------- */
+html.borne .b-panel .cab .num,html.borne .b-store .cab .num{display:none!important}
+
+/* ---------- manette, révisée : socle fixe (image), tige chromée dessinée qui pivote au col du socle, boule (image) qui suit la tige
+   en gardant sa lumière fixe (contre-rotation) ; l'ombre de la boule glisse au sol ---------- */
+html.borne .b-panel .cabinets>.b-stick i{background:none!important;clip-path:none!important;transform-origin:50% 74%!important;
+  transform:rotate(calc(var(--x,0) * 14deg))!important}/* 1er nov., 11 h : rotation plane, d'un bloc ; la perspective (rotateX) faisait ployer le haut, comme un coude cassé */
+html.borne .b-panel .cabinets>.b-stick i::before{content:"";position:absolute;inset:0;display:block!important;background:var(--i-stick) center bottom/contain no-repeat;
+  clip-path:none;z-index:2}
+/* 1er nov., 05 h 13 (LISTE 59) : manette-a.webp entière, d'une seule pièce, sans coupe ; elle penche d'un bloc autour de son pivot au centre de l'anneau (74 %) */
+html.borne .b-panel .cabinets>.b-stick i::after{content:none!important;display:none!important}
+
+/* en jeu, la pluie de Koins reste hors de l'écran (règle du 30 oct. : zéro décor qui prend de l'écran) ; elle tombe à l'accueil */
+html.borne[data-prog] .kdrop{display:none!important}
+/* toutes les Koins qui volent ont la matière de la Koin du gros plan (koin.webp), la même ombre, la même lumière */
+html.borne .kdrop{font-size:0!important;width:18px;height:18px;background:url(koin.webp) center/contain no-repeat;text-shadow:none!important;filter:drop-shadow(0 1px 2px rgba(0,0,0,.65)) brightness(1.05)}
+/* la Koin que pose un psychopompe : même matière que les autres Koins */
+html.borne .gkoin{font-size:0!important;width:24px;height:24px;background:url(koin.webp) center/contain no-repeat!important;text-shadow:none!important;border:0!important;filter:drop-shadow(0 2px 3px rgba(0,0,0,.6))}
+/* molette 👣 sur arrêt : les psychopompes quittent la borne */
+html.borne.b-nopsy .guide,html.borne.b-nopsy .gtip{display:none!important}
+/* le copyright laisse la place de l'aimant Dekonect, en bas à droite */
+html.borne .b-copy{padding-right:max(var(--inset,12px),64px)!important}
+/* 31 oct. — Lore posé sur la caisse (la porte), plus sur la plaque de la fente */
+html.borne .b-door{position:relative}
+html.borne .b-door>.b-lore.b-onbox{position:absolute;left:var(--lx,20%);top:var(--ly,10%);z-index:6;width:108px!important;height:48px!important;font-size:.9rem!important;}
+
+/* 31 oct. — la console en perspective passe devant les bandes peintes des flancs (les tiges droites traversaient ses pans obliques) */
+html.borne #home .b-panel{z-index:2}
+/* 31 oct. — la plaque des molettes tient dans la caisse (elle débordait du flanc droit sous 1500 px) */
+@media (max-width:1500px) and (min-width:701px){html.borne .b-doorrow>.b-knobs{zoom:.86}}
+/* bandeau du Motel Sound : le titre traverse de droite à gauche, une occurrence à la fois, la suivante entre quand la précédente atteint le bord gauche ; 45 px/s, transform seul */
+html.borne .motel-l .b-tk{display:inline-flex;white-space:nowrap;animation:btkloop var(--tkd,10s) linear infinite;will-change:transform}
+html.borne .motel-l .b-tk>.b-u{flex:none;display:inline-flex}
+html.borne .motel-l .b-sep{font-style:normal;padding:0 .7em;opacity:.5}
+@keyframes btkloop{from{transform:translate3d(var(--tkf,200px),0,0)}to{transform:translate3d(var(--tkp,-200px),0,0)}}
+@keyframes btkin{from{opacity:0}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){html.borne .motel-l .b-tk,html.borne .motel-l .b-tk.b-in{animation:none;transform:none}html.borne .motel-l .b-tk>.b-c,html.borne .motel-l .b-sep{display:none}}
+/* LORE sur la caisse à pièces, partout : son échelle suit la place trouvée */
+html.borne .b-door>.b-lore.b-onbox{transform:rotate(var(--lr,-6deg)) scale(var(--ls,1))}
+html.borne .b-door>.b-lore.b-onbox:hover{transform:rotate(var(--lr,-6deg)) scale(calc(var(--ls,1) * 1.06))}
+/* 31 oct. — fronton symétrique (bureau et tablette) : sous chaque haut-parleur, une même plaque d'affichage, même hauteur, même ligne de base ; à gauche le titre du Motel Sound, à droite le son et PL en deux moitiés */
+@media (min-width:701px){
+  html.borne:not([data-bland]) .bar .dock:last-of-type:has(.b-bell){display:flex!important;align-items:flex-end!important;justify-content:center!important;gap:0!important;padding:0 4px var(--b-tkb,4px)!important;box-sizing:border-box}
+  html.borne:not([data-bland]) .bar .dock.dock:last-of-type :is(.b-bell.b-bell,#export-pl#export-pl){height:var(--b-tkh,18px)!important;min-height:0!important;margin:0!important;border-radius:0!important;
+    display:grid!important;place-items:center!important;line-height:1!important;filter:none!important}
+  html.borne:not([data-bland]) .bar .dock:last-of-type .b-bell{border-radius:3px 0 0 3px!important}
+  
+}
+@media (min-width:701px){
+  html.borne:not([data-bland]) .bar .dock.dock:last-of-type :is(.b-bell.b-bell,#export-pl#export-pl){color:var(--lcd-ink,var(--pal-accent,#ffb54a))!important;letter-spacing:.12em!important}
+  html.borne:not([data-bland]) .bar .dock.dock:last-of-type .b-bell.b-bell :is(svg,img,i){width:calc(var(--b-tkh,18px) * .7)!important;height:calc(var(--b-tkh,18px) * .7)!important;font-size:calc(var(--b-tkh,18px) * .7)!important;line-height:1!important}
+}
+/* fronton : la plaque de droite, jumelle de celle de gauche (largeur, angles, brillance, police, séparateur plein) */
+@media (min-width:701px){
+  html.borne:not([data-bland]) .bar .dock.dock:last-of-type :is(.b-bell.b-bell,#export-pl#export-pl){width:calc(var(--b-tkw,208px) / 2)!important;font-family:var(--b-tkf,'DM Mono',monospace)!important;font-size:12px!important;box-shadow:none!important;position:relative!important;
+    background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,0) 40%),var(--lcd-bg,#0d0b08)!important}
+  html.borne:not([data-bland]) .bar .dock.dock:last-of-type .b-bell.b-bell{border-radius:3px 0 0 3px!important;border-right:1px solid rgba(0,0,0,.6)!important}
+  html.borne:not([data-bland]) .bar .dock.dock:last-of-type #export-pl#export-pl{border-radius:0 3px 3px 0!important;margin-left:0!important}
+  /* titre du Motel Sound : 11 px au moins */
+  
+}
+/* pied du meuble au téléphone et à la tablette : la mention tient en deux lignes équilibrées, l'aimant garde sa place à droite */
+@media (max-width:900px){html.borne .b-copy{text-wrap:balance;letter-spacing:.02em!important;padding-right:56px!important;padding-left:56px!important}}
+@media (min-width:701px){html.borne:not([data-bland]) .bar .dock.dock:last-of-type :is(.b-bell.b-bell,#export-pl#export-pl)::after,html.borne:not([data-bland]) .bar .dock:first-of-type #radio-toggle::after{content:"";position:absolute;inset:-13px 0}}
+html.borne .b-door>.b-lore.b-onbox::before{content:"";position:absolute;inset:-12px}
+/* la paire son / PL reste sur une seule ligne, opaque, à toutes les largeurs de bureau et de tablette */
+@media (min-width:701px){
+  html.borne:not([data-bland]) .bar .dock.dock:last-of-type:has(.b-bell){flex-wrap:nowrap!important;flex-direction:row!important}
+  html.borne:not([data-bland]) .bar .dock.dock:last-of-type :is(.b-bell.b-bell,#export-pl#export-pl){box-sizing:border-box!important;flex:0 0 calc(var(--b-tkw,208px) / 2)!important;max-width:none!important;opacity:1!important;align-self:flex-end!important;grid-row:auto!important;grid-column:auto!important}
+}
+@media (max-width:900px){html.borne .b-copy{padding:14px 64px 10px!important}}
+
+/* téléphone et tablette debout : la mention descend dans la bande du socle, centrée dans sa hauteur */
+@media (max-width:900px){html.borne:not([data-bland]) .b-copy{position:relative;top:20px}}
+@media (max-width:400px){html.borne .b-copy{padding-left:40px!important;padding-right:56px!important}}
+
+/* autocollant Lore : papier vierge teinté, mot en texte, déplacement à la main */
+html.borne .b-lore{position:relative;cursor:grab;user-select:none;-webkit-user-select:none;touch-action:none}
+html.borne .b-lore .b-paper{position:absolute;inset:0;background:var(--i-lore) center/contain no-repeat;filter:drop-shadow(0 1px 1.5px rgba(0,0,0,.45));pointer-events:none}
+html.borne .b-lore .b-word{position:relative;display:block;font-family:var(--f-sign);font-size:30px;line-height:1;letter-spacing:.05em;text-transform:uppercase;color:#f6ead0;-webkit-text-stroke:.045em #f6ead0;paint-order:stroke fill;white-space:nowrap;pointer-events:none;transition:opacity .17s ease,transform .17s ease;
+  text-shadow:.03em 0 0 #1b0b06,-.03em 0 0 #1b0b06,0 .03em 0 #1b0b06,0 -.03em 0 #1b0b06,.04em .04em 0 #1b0b06,.06em .06em 0 #e8641c,.09em .09em 0 #e8641c,.12em .12em 0 #c24d12,.14em .14em 0 #1b0b06}
+html.borne .b-lore.b-peel .b-word{opacity:0;transform:scaleX(var(--sx,1)) scaleY(.1) translateY(.15em)}
+html.borne .b-lore.b-peel .b-paper{filter:drop-shadow(0 1px 1.5px rgba(0,0,0,.45)) brightness(1.12)}
+html.borne .b-lore.b-drag{cursor:grabbing}
+html.borne .b-lore.b-back{transition:left .4s ease,top .4s ease}
+
+/* barre son d'une pièce (1er nov.) : INSERT KOIN à gauche, puis le titre qui défile, PL, son et haut-parleur joints à droite */
+@media (min-width:701px){
+  html.borne:not([data-prog]) #bar.bar{grid-template-columns:auto minmax(0,1fr) minmax(0,150px)!important;column-gap:0!important}
+  html.borne:not([data-prog]) #bar.bar>#brand{grid-area:1/1!important;margin-right:12px;width:clamp(220px,24vw,320px)!important;max-width:320px!important}
+  html.borne:not([data-prog]) #bar.bar>.dock:not(:last-child){grid-area:1/2!important;justify-self:stretch!important;width:100%!important;max-width:none!important;min-width:0!important;margin:0!important;border-top-right-radius:0!important;border-bottom-right-radius:0!important;border-right:0!important}
+  html.borne:not([data-prog]) #bar.bar>.dock:last-child{grid-area:1/3!important;width:auto!important;max-width:150px!important;margin:0!important;border-top-left-radius:0!important;border-bottom-left-radius:0!important;border-left:0!important}
+}
+
+/* 1er nov., 07 h 40 — barre son d'un seul bloc : INSERT KOIN, puis le bloc son sur toute la largeur restante ; le titre défile à gauche, PL et son à sa droite, le haut-parleur joint au bout, à la proportion de son image */
+@media (min-width:701px){
+  html.borne:not([data-prog]) #bar.bar#bar:not(#r1):not(#r2){display:flex!important;align-items:stretch!important;column-gap:0!important;grid-template-columns:none!important}
+  html.borne:not([data-prog]) #bar.bar#bar:not(#r1):not(#r2)>#brand{flex:0 0 auto!important;margin-right:12px!important;align-self:center!important}
+  html.borne:not([data-prog]) #bar.bar#bar:not(#r1):not(#r2)>.dock:not(:last-child){flex:1 1 auto!important;width:auto!important;max-width:none!important;min-width:0!important;margin:0!important;height:auto!important;display:flex!important;flex-wrap:nowrap!important;align-items:center!important;gap:4px!important;border-radius:6px 0 0 6px!important;border-right:0!important}
+  html.borne:not([data-prog]) #bar.bar#bar:not(#r1):not(#r2)>.dock:not(:last-child) #radio-toggle{flex:1 1 auto!important;width:auto!important;max-width:none!important;min-width:0!important}
+  html.borne:not([data-prog]) #bar.bar#bar:not(#r1):not(#r2)>.dock:not(:last-child) #radio-toggle .motel-l{font-size:12px!important}
+  html.borne:not([data-prog]) #bar.bar#bar:not(#r1):not(#r2)>.dock:not(:last-child) :is(#export-pl,.b-bell){flex:0 0 30px!important;width:30px!important;height:30px!important;min-width:0!important;max-width:30px!important;margin:0!important}
+  html.borne:not([data-prog]) #bar.bar#bar:not(#r1):not(#r2)>.dock:last-child{flex:0 0 auto!important;align-self:stretch!important;padding:0!important;width:auto!important;min-width:0!important;max-width:none!important;height:auto!important;min-height:0!important;flex-basis:48px!important;margin:0!important;border-radius:0 6px 6px 0!important;border-left:0!important}
+  
+}
+@media (max-width:700px){
+  html.borne:not([data-prog]) #bar.bar#bar:not(#r1):not(#r2){grid-template-columns:minmax(0,1fr) 40px!important;column-gap:0!important}
+  
+  html.borne:not([data-prog]) #bar.bar#bar:not(#r1):not(#r2)>.dock:not(:last-child){border-radius:6px 0 0 6px!important;border-right:0!important;margin:0!important;width:auto!important;max-width:none!important}
+  html.borne:not([data-prog]) #bar.bar#bar:not(#r1):not(#r2)>.dock:last-child{border-radius:0 6px 6px 0!important;border-left:0!important;margin:0!important;width:auto!important;max-width:none!important;min-width:0!important}
+  html.borne:not([data-prog]) #bar.bar#bar:not(#r1):not(#r2)>.dock:not(:last-child) #radio-toggle .motel-l{font-size:12px!important}
+  html.borne:not([data-prog]) #bar.bar#bar:not(#r1):not(#r2)>.dock:not(:last-child){grid-template-columns:minmax(0,1fr) 32px 32px!important;gap:2px!important}
+  html.borne:not([data-prog]) #bar.bar#bar:not(#r1):not(#r2)>.dock:not(:last-child) :is(#export-pl,.b-bell){width:32px!important;min-width:0!important;max-width:32px!important;height:32px!important;flex:0 0 32px!important;margin:0!important;position:relative}
+  html.borne:not([data-prog]) #bar.bar#bar:not(#r1):not(#r2)>.dock:not(:last-child) :is(#export-pl,.b-bell)::after{content:"";position:absolute;inset:-6px -1px}
+}
+@media (min-width:701px){html.borne[data-bland]:not([data-prog]) #bar.bar#bar:not(#r1):not(#r2){width:100%!important;max-width:none!important;justify-self:stretch!important;padding-right:66px!important}}
+
+/* 1er nov. : lustre de l'autocollant Lore, à la forme du papier, de temps en temps */
+html.borne .b-lore .b-lustre{position:absolute;inset:0;pointer-events:none;opacity:0;-webkit-mask:var(--i-lore) center/contain no-repeat;mask:var(--i-lore) center/contain no-repeat;
+  background:linear-gradient(110deg,transparent 30%,rgba(255,250,230,.0) 38%,rgba(255,252,240,.85) 50%,rgba(255,250,230,.0) 62%,transparent 70%) -140% 0/260% 100% no-repeat;mix-blend-mode:screen}
+html.borne .b-lore.b-shine .b-lustre{animation:b-lustre 1.2s ease-out}
+@keyframes b-lustre{0%{opacity:1;background-position:-140% 0}85%{opacity:1}100%{opacity:0;background-position:140% 0}}
+
+
+/* 1er nov., 10 h 50 — bloc son d'une pièce : une plaque continue sous les deux boîtes, le haut-parleur rond dans sa boîte, sans cadre propre */
+html.borne:not([data-prog]) #bar.bar#bar:not(#r1):not(#r2)>.dock{background-size:auto,var(--bk-w,100%) 100%,auto!important;background-repeat:no-repeat!important}
+html.borne:not([data-prog]) #bar.bar#bar:not(#r1):not(#r2)>.dock:not(:last-child){background-position:0 0,left center,0 0!important;box-shadow:none!important}
+html.borne:not([data-prog]) #bar.bar#bar:not(#r1):not(#r2)>.dock:last-child{background-position:0 0,right center,0 0!important;box-shadow:none!important;position:relative!important;overflow:hidden}
+html.borne:not([data-prog]) #bar.bar#bar:not(#r1):not(#r2)>.dock:last-child::after{content:"";position:absolute;top:50%;left:50%;height:calc(100% - 10px);aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;
+  background:url(skin-metal-grille.webp) center/190% no-repeat;box-shadow:inset 0 0 0 1px rgba(0,0,0,.7),0 1px 0 rgba(255,255,255,.12)}
+html.borne[data-skin=bois]:not([data-prog]) #bar.bar#bar:not(#r1):not(#r2)>.dock:last-child::after{background:url(skin-bois-grille.webp) center/auto 330% no-repeat}
+html.borne:not([data-prog]) #bar.bar#bar:not(#r1):not(#r2){filter:drop-shadow(0 6px 10px rgba(0,0,0,.55))}
+
+/* 1er nov., 10 h 50 — caisse et rack : le groupe entier se centre sur l'axe du meuble, 16 px d'écart */
+@media (min-width:701px){html.borne:not([data-prog]):not([data-bland]) .b-doorrow.b-doorrow:not(#r1):not(#r2){grid-template-columns:auto auto!important;justify-content:center!important;column-gap:32px!important}
+  html.borne:not([data-prog]):not([data-bland]) .b-doorrow.b-doorrow:not(#r1):not(#r2)>.b-door{grid-column:1!important}
+  html.borne:not([data-prog]):not([data-bland]) .b-doorrow.b-doorrow:not(#r1):not(#r2)>.b-knobs{grid-column:2!important}}
+
+/* 1er nov., 10 h 50 — solde de Koins : zéro trait d'encadrement, compteur plus petit */
+html.borne .b-bezelfoot #koins#koins{box-shadow:none!important;outline:0!important;border:0!important}
+html.borne .b-bezelfoot #koins#koins.b-credit::before,html.borne .b-bezelfoot #koins#koins #kn{font-size:12px!important}
+html.borne .b-bezelfoot #koins#koins .b-kicon{width:14px!important;height:14px!important}
+
+/* 1er nov., 11 h — téléphone couché de moins de 701 px : la bande de commandes reste la colonne de droite (la règle du téléphone debout l'étirait sur toute la largeur, par-dessus l'écran et les points) */
+@media (max-width:700px) and (max-height:520px) and (orientation:landscape){
+  html.borne[data-prog]:not(.b-immersion):not(#r1) .b-bezelfoot{position:fixed!important;right:6px!important;left:auto!important;top:6px!important;bottom:6px!important;width:66px!important;height:auto!important;flex-direction:column!important;flex-wrap:nowrap!important;justify-content:space-between!important}}
+@media (max-height:380px) and (orientation:landscape){
+  html.borne[data-prog]:not(.b-immersion):not(#r1) .b-bezelfoot{row-gap:2px!important;padding-top:2px!important;padding-bottom:2px!important}
+  html.borne[data-prog]:not(.b-immersion):not(#r1) .b-bezelfoot :is(.b-pfx .b-px,.b-imm,.b-boom){width:30px!important;height:30px!important;min-width:30px!important;max-width:30px!important;min-height:0!important}
+  html.borne[data-prog]:not(.b-immersion):not(#r1) .b-bezelfoot .b-pfx{gap:2px!important}
+  html.borne[data-prog]:not(.b-immersion):not(#r1) .b-bezelfoot #koins{height:30px!important;min-height:0!important}}
+
+/* 1er nov., 11 h 30 — caisse et rack, deux blocs nettement disjoints : 28 px d'écart au téléphone (l'un sous l'autre), 32 px ailleurs (côte à côte) */
+@media (max-width:700px){html.borne:not([data-prog]) .b-doorrow.b-doorrow:not(#r1):not(#r2){row-gap:28px!important}}
+@media (min-width:701px){html.borne:not([data-prog]) .b-doorrow.b-doorrow:not(#r1):not(#r2){column-gap:32px!important}}
+@media (max-width:700px) and (orientation:landscape) and (max-height:520px){
+  html.borne:not([data-prog]) .b-doorrow.b-doorrow.b-doorrow:not(#r1):not(#r2){grid-template-columns:auto!important;justify-content:center!important;justify-items:center!important;row-gap:24px!important;column-gap:0!important}
+  html.borne:not([data-prog]) .b-doorrow.b-doorrow.b-doorrow:not(#r1):not(#r2)>.b-door{grid-column:1!important;grid-row:1!important}
+  html.borne:not([data-prog]) .b-doorrow.b-doorrow.b-doorrow:not(#r1):not(#r2)>.b-knobs{grid-column:1!important;grid-row:2!important}}
+/* 1er nov., 11 h 35 — caisse et rack disjoints partout : 24 px d'écart, en ligne comme en colonne */
+html.borne:not([data-prog]) .b-doorrow.b-doorrow:not(#r1):not(#r2){column-gap:24px!important;row-gap:24px!important}
+/* 1er nov., 12 h 35 — téléphone debout : le rack seul à droite de la caisse (référentiel, n°4), en plaque compacte de deux rangées, 18 px d'écart ; deux objets distincts */
+@media (max-width:700px) and (orientation:portrait){html.borne:not([data-prog]) .b-doorrow.b-doorrow:not(#r1):not(#r2){grid-template-columns:auto auto!important;justify-content:center!important;align-items:center!important;column-gap:18px!important}
+  html.borne:not([data-prog]) .b-doorrow.b-doorrow:not(#r1):not(#r2)>.b-door{grid-column:1!important;grid-row:1!important;max-width:calc(100vw - 196px)!important}
+  html.borne:not([data-prog]) .b-doorrow.b-doorrow:not(#r1):not(#r2)>.b-knobs{grid-column:2!important;grid-row:1!important;grid-template-columns:repeat(2,auto)!important;width:auto!important;justify-self:start!important}}
+/* 1er nov., 12 h — zéro défilement horizontal parasite (décors en pseudo-éléments qui dépassaient de 18 à 33 px au téléphone couché) */
+html.borne .b-roof{overflow-x:clip;overflow-y:visible}
+/* 1er nov., 12 h — téléphone couché : l'enseigne prend la largeur de son nom entier */
+@media (min-width:701px){html.borne[data-bland]:not([data-prog]) #bar.bar#bar:not(#r1):not(#r2)>#brand{width:auto!important;max-width:none!important;padding-inline:12px!important}}
+
+/* 1er nov., 12 h 30 — bloc son refait (LISTE 50, 53, 57) : un seul bloc, moins haut ; à gauche le titre qui défile sur la plus grande part ;
+   à droite, bien casés, deux boutons-baffles (PL, son) : chacun un haut-parleur rond pris dans l'image de la grille, sa marque imprimée dessus ; zéro haut-parleur à part */
+html.borne:not([data-prog]) #bar.bar#bar:not(#r1):not(#r2)>.dock:last-child{display:none!important}
+html.borne:not([data-prog]) #bar.bar#bar:not(#r1):not(#r2)>.dock:not(:last-child){grid-column:1/-1!important;align-self:center!important;height:38px!important;min-height:0!important;padding:3px 4px 3px 8px!important;gap:5px!important;
+  border-radius:6px!important;border-right:inherit!important;background-size:auto,100% 100%,auto!important;background-position:0 0,center,0 0!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.1),inset 0 -1px 0 rgba(0,0,0,.6),0 4px 10px rgba(0,0,0,.55)!important}
+html.borne:not([data-prog]) #bar.bar#bar:not(#r1):not(#r2)>.dock:not(:last-child) #radio-toggle{height:30px!important;min-height:0!important;align-self:center!important}
+html.borne:not([data-prog]) #bar.bar#bar:not(#r1):not(#r2)>.dock:not(:last-child) :is(#export-pl,.b-bell){flex:0 0 32px!important;width:32px!important;height:32px!important;max-width:32px!important;min-width:0!important;min-height:0!important;max-height:32px!important;border-radius:50%!important;border:0!important;margin:0!important;
+  background:url(skin-metal-grille.webp) center/185% no-repeat!important;box-shadow:inset 0 0 0 1px rgba(0,0,0,.75),inset 0 0 6px rgba(0,0,0,.6),0 1px 0 rgba(255,255,255,.14)!important;
+  color:#f6ead0!important;text-shadow:0 0 3px #000,0 0 6px #000!important;font-size:12px!important;display:grid!important;place-items:center!important;padding:0!important;position:relative!important;align-self:center!important;transform:none!important;inset:auto!important;vertical-align:middle!important}
+html.borne[data-skin=bois]:not([data-prog]) #bar.bar#bar:not(#r1):not(#r2)>.dock:not(:last-child) :is(#export-pl,.b-bell){background:url(skin-bois-grille.webp) center/auto 320% no-repeat!important}
+html.borne:not([data-prog]) #bar.bar#bar:not(#r1):not(#r2)>.dock:not(:last-child) .b-bell :is(svg,img,i){filter:drop-shadow(0 0 2px #000) drop-shadow(0 0 3px #000)}
+@media (max-width:700px){html.borne:not([data-prog]) #bar.bar#bar:not(#r1):not(#r2){grid-template-columns:minmax(0,1fr)!important}}
+@media (max-width:700px) and (orientation:portrait){html.borne:not([data-prog]) .b-doorrow.b-doorrow:not(#r1):not(#r2)>.b-dekonect{left:auto!important;right:10px!important;top:auto!important;bottom:4px!important;transform:none!important}}
+@media (max-width:700px) and (orientation:portrait){html.borne:not([data-prog]) .b-doorrow.b-doorrow:not(#r1):not(#r2):not(#r3):not(#r4){padding-bottom:52px!important}}
+
+/* 1er nov., 12 h 40 — Lore vivant : lustre ou petit frémissement toutes les 3 à 8 s, mot et couleur toutes les 6 à 12 s ; plante plus grande au téléphone */
+html.borne .b-lore.b-wob{animation:b-wob .9s ease-in-out}
+@keyframes b-wob{0%,100%{rotate:0deg;scale:1}30%{rotate:-3deg;scale:1.06}60%{rotate:2deg;scale:1.03}}
+@media (max-width:700px){html.borne:not([data-prog]) .b-roof.b-roof:not(#r1):not(#r2):not(#r3){height:calc(1.4 * var(--p2h,120px))!important}}
+
+/* 7 nov. : autocollant Lore, cinq papiers de la DA ; lettre, ombre portée et contour propres à chaque papier ; contraste lettre/papier ≥ 4,5 */
+html.borne .b-lore .b-word{transform:scaleX(var(--sx,1));transform-origin:50% 50%}
+html.borne .b-lore[data-pap="noir"] .b-word{color:#f6ead0;-webkit-text-stroke-color:#f6ead0;text-shadow:.03em 0 0 #000,-.03em 0 0 #000,0 .03em 0 #000,0 -.03em 0 #000,.04em .04em 0 #000,.06em .06em 0 #ffa726,.09em .09em 0 #ffa726,.12em .12em 0 #c77a12,.14em .14em 0 #000}
+html.borne .b-lore[data-pap="ambre"] .b-word{color:#2a0d06;-webkit-text-stroke-color:#2a0d06;text-shadow:.04em .04em 0 #2a0d06,.06em .06em 0 #fff0cf,.09em .09em 0 #fff0cf,.11em .11em 0 #2a0d06}
+html.borne .b-lore[data-pap="creme"] .b-word{color:#7a1416;-webkit-text-stroke-color:#7a1416;text-shadow:.03em 0 0 #3a0a08,-.03em 0 0 #3a0a08,0 .03em 0 #3a0a08,0 -.03em 0 #3a0a08,.04em .04em 0 #3a0a08,.06em .06em 0 #e8951e,.09em .09em 0 #e8951e,.12em .12em 0 #b8650e,.14em .14em 0 #3a0a08}
+html.borne .b-lore[data-pap="bleu"] .b-word{color:#f6ead0;-webkit-text-stroke-color:#f6ead0;text-shadow:.03em 0 0 #0b1a20,-.03em 0 0 #0b1a20,0 .03em 0 #0b1a20,0 -.03em 0 #0b1a20,.04em .04em 0 #0b1a20,.06em .06em 0 #ffa726,.09em .09em 0 #ffa726,.12em .12em 0 #c77a12,.14em .14em 0 #0b1a20}
+
+/* 7 nov. : relevé contrôlé contre borne/ (même skin bois) — enseigne 40 → 60 px de haut au téléphone, 38 → 64 px à l'ordinateur ;
+   lettrage de Burrows 13,7 → 24 px au téléphone, 18,7 → 33 px à l'ordinateur ; aimant Dekonect 26 → 48 px au téléphone */
+html.borne:not([data-prog]):not(#k1):not(#k2):not(#k3) #brand{min-height:clamp(54px,7.2vh,68px)!important;height:clamp(54px,7.2vh,68px)!important;font-size:clamp(1rem,min(3.1vh,2.4vw),2.2rem)!important}
+@media (max-width:700px){html.borne:not([data-prog]):not(#k1):not(#k2):not(#k3) #brand{min-height:58px!important;height:58px!important;font-size:1.7rem!important}}
+html.borne:not([data-prog]):not(#k1):not(#k2):not(#k3) .b-land span{font-size:clamp(1.6rem,4.2vh,2.2rem)!important;letter-spacing:.2em!important}
+@media (max-width:700px){html.borne:not([data-prog]):not(#k1):not(#k2):not(#k3) .b-land span{font-size:1.5rem!important}}
+@media (max-width:700px){html.borne:not([data-prog]):not(#k1):not(#k2):not(#k3) .b-dekonect{width:48px!important;height:48px!important}
+  html.borne:not([data-prog]):not(#k1):not(#k2):not(#k3) .b-dekonect svg{width:100%!important;height:100%!important}}
+/* 7 nov. : touches de console au téléphone, 4/3 → 16/10 (95 → 79 px de haut à 390 px) : la caisse remonte, la cible reste au-dessus de 44 px */
+@media (max-width:700px){html.borne:not([data-prog]):not(#k1):not(#k2):not(#k3) .b-panel .cabinets>.cab{aspect-ratio:16/10!important;min-height:0!important}}
+/* 7 nov. : aimant Dekonect lisible aussi au téléphone couché */
+@media (max-height:500px){html.borne:not([data-prog]):not(#k1):not(#k2):not(#k3) .b-dekonect{width:44px!important;height:44px!important}
+  html.borne:not([data-prog]):not(#k1):not(#k2):not(#k3) .b-dekonect svg{width:100%!important;height:100%!important}}
+/* 7 nov. (décision du 31 oct., 8 h 45 : caisse centrée sur le meuble, partout ; blocs disjoints) : à l'écran large, la caisse tient l'axe du meuble, le rack se range à sa droite, à 24 px */
+@media (min-width:1000px) and (min-height:501px){html.borne:not([data-prog]):not(#k1):not(#k2):not(#k3) .wrap>.b-doorrow,html.borne:not([data-prog]):not(#k1):not(#k2):not(#k3) #home .b-doorrow{display:grid!important;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)!important;align-items:center!important;justify-content:stretch!important;column-gap:24px!important}
+  html.borne:not([data-prog]):not(#k1):not(#k2):not(#k3) .b-doorrow>.b-door{grid-column:2!important;justify-self:center!important;margin:0!important}
+  html.borne:not([data-prog]):not(#k1):not(#k2):not(#k3) .b-doorrow>.b-knobs{grid-column:3!important;justify-self:start!important;margin:0!important}}
+/* 7 nov., 23 h 55 : le panneau de commandes avance devant les arêtes des flancs (.wrap::before et ::after, z 6), comme sur une borne réelle ; le guide (z 60) reste au-dessus */
+html.borne:not([data-prog]):not(#k1):not(#k2):not(#k3) .b-panel{z-index:7!important}
+html.borne:not([data-prog]):not(#k1):not(#k2):not(#k3) .b-doorrow{z-index:8!important}/* la rangée de la caisse (aimant Dekonect compris) reste au-dessus du panneau là où leurs boîtes se croisent, au téléphone couché */
+/* 8 nov. (LISTE n°14, décision S13 « la date sur le noir ») : au téléphone, la chambre grossie (z 1,25) remplit le bas de l écran ; la date monte dans le coin haut droit, sur le noir au-dessus du mur, hors des Masks */
+@media (max-width:560px){html.borne:not([data-prog]):not(#k1):not(#k2):not(#k3) .b-date{top:3%!important;bottom:auto!important}}
+/* 8 nov. (LISTE n°28) : skin métal, l étiquette de la fente monte entre la fenêtre (bas à 48 %) et la serrure (haut à 64 %), qu elle couvrait */
+html.borne.borne[data-skin=metal]:not(#k1):not(#k2) .b-slot b{top:48.5%!important}
+/* 8 nov. : plaque Mauk Tenieb d'avant (Mauk Tenieb, 2 h 28 : « reviens à l'ancienne ») ; posée entière sur la face de la console, dans son plan incliné (2 h 29 : « en perspective au moins ») */
+html.borne:not([data-prog]):not(#k1):not(#k2):not(#k3) #home .b-panel>.b-plate{margin-bottom:32px!important;position:relative;z-index:3}
+@media (max-height:500px){html.borne:not([data-prog]):not(#k1):not(#k2):not(#k3) #home .b-plate .b-badge{height:34px!important}}
+/* 8 nov. (DA, Point de vue ; Mauk Tenieb, 2 h 22 : « les boutons sont pas en perspective ») : 38° pour 600 px, point de fuite au-dessus du centre ; touches, BC TL IG et plaque suivent l inclinaison du panneau vers le joueur, un seul point de fuite au-dessus du centre de la console */
+html.borne:not([data-prog]):not(#k1):not(#k2):not(#k3) #home .b-panel{perspective:600px!important;perspective-origin:50% -40%!important}
+html.borne:not([data-prog]):not(#k1):not(#k2):not(#k3) #home .b-panel>.b-row1,html.borne:not([data-prog]):not(#k1):not(#k2):not(#k3) #home .b-panel>.b-row2,html.borne:not([data-prog]):not(#k1):not(#k2):not(#k3) #home .b-panel>.b-plate{transform:rotateX(38deg)!important;transform-origin:50% 100%!important}
+/* 8 nov. : autocollant Lore en vinyle imprimé à plat, une encre, zéro relief ni ombre double (juges DA et UX ; graphisme d époque) */
+html.borne .b-lore .b-word{text-shadow:none!important;filter:none!important}
+html.borne .b-lore .b-lustre{display:none!important}
+html.borne .b-lore.b-drag{cursor:grabbing}html.borne .b-lore.b-onbox{cursor:grab;touch-action:none}
+/* 8 nov. (LISTE n°68, juges du 8 nov.) : BC TL IG gardent leur hoquet de LED, plancher d opacité 0,6 ; le libellé reste lisible pendant l extinction */
+html.borne #home .b-row2 .menu .dead{animation-name:deadb!important}html.borne #home .b-row2 .menu .flk{animation-name:flkb!important}
+@keyframes deadb{0%{opacity:.62;text-shadow:none;box-shadow:none}72%{opacity:.62;text-shadow:none}76%{opacity:1}80%{opacity:.7;text-shadow:none}86%{opacity:1}}
+@keyframes flkb{0%{opacity:.62;text-shadow:none;box-shadow:none}10%{opacity:1}18%{opacity:.7;text-shadow:none}26%{opacity:1}60%{opacity:.85}66%{opacity:1}}
+/* enseigne : plexiglas sérigraphié rétroéclairé (DA.md : tube fluorescent derrière l'enseigne) ; relief imprimé des lettres sans halo ; deux bandes plus claires des tubes ; reflet du plexi ; zéro ampoule */
+html.borne .bar .brand{text-shadow:1px 1px 0 var(--sg-x1),2px 2px 0 var(--sg-x1),3px 3px 0 var(--sg-x2),4px 4px 0 var(--sg-x2),5px 5px 3px rgba(0,0,0,.6)!important}
+html.borne .bar .brand::after{animation:none!important;-webkit-mask:none!important;mask:none!important;filter:none!important;opacity:1!important;inset:4px!important;border-radius:4px!important;
+  background:linear-gradient(115deg,rgba(255,255,255,.10),rgba(255,255,255,0) 40%),linear-gradient(to bottom,transparent 0 24%,rgba(255,236,196,.16) 30%,transparent 38% 62%,rgba(255,236,196,.16) 70%,transparent 76%)!important;
+  box-shadow:inset 0 0 12px rgba(0,0,0,.35)!important;mix-blend-mode:screen}
+/* 8 nov. : tilt de Baku Boom réaliste ; la borne bascule autour de ses pieds, oscille en s amortissant, les pieds décollent aux pics ; enseigne et lampes vacillent ; le tube se replie en trait, puis en point qui s éteint, puis chauffe et se rallume */
+html.borne .wrap.b-shake{animation:bshake2 1.4s cubic-bezier(.25,.6,.3,1)!important;transform-origin:50% 100%!important}
+@keyframes bshake2{0%{transform:rotate(0) translateY(0)}8%{transform:rotate(-2.4deg) translateY(-4px)}20%{transform:rotate(1.9deg) translateY(-3px)}32%{transform:rotate(-1.3deg) translateY(-1px)}44%{transform:rotate(.9deg) translateY(0)}56%{transform:rotate(-.55deg)}68%{transform:rotate(.3deg)}80%{transform:rotate(-.15deg)}100%{transform:rotate(0) translateY(0)}}
+html.borne.b-tilted #brand{animation:btiltsign 1.3s steps(1) both}
+@keyframes btiltsign{0%{filter:brightness(1)}6%{filter:brightness(.25)}12%{filter:brightness(1.4)}18%{filter:brightness(.15)}34%{filter:brightness(.15)}40%{filter:brightness(1.2)}46%{filter:brightness(.4)}60%{filter:brightness(1)}}
+html.borne.b-tilted #home .b-row2 .menu a,html.borne.b-tilted #home .cabinets .cab{animation:btiltlamp 1.3s steps(1) both!important}
+@keyframes btiltlamp{0%{filter:brightness(1)}10%{filter:brightness(.45)}30%{filter:brightness(.45)}36%{filter:brightness(1.25)}42%{filter:brightness(.6)}60%{filter:brightness(1)}}
+html.borne .b-glass.b-off>*{animation:boff2 .62s ease-in forwards!important}
+@keyframes boff2{0%{transform:scale(1,1);filter:brightness(1)}38%{transform:scale(1,.008);filter:brightness(4)}70%{transform:scale(.012,.008);filter:brightness(7)}100%{transform:scale(.004,.004);filter:brightness(0)}}
+html.borne .b-glass.b-on>*{animation:bon2 .7s ease-out!important}
+@keyframes bon2{0%{transform:scale(.004,.004);filter:brightness(0)}12%{transform:scale(.02,.008);filter:brightness(6)}40%{transform:scale(1,.008);filter:brightness(4)}70%{transform:scale(1,1);filter:brightness(1.6) saturate(.6)}100%{transform:scale(1,1);filter:brightness(1) saturate(1)}}
+@media (prefers-reduced-motion:reduce){html.borne .wrap.b-shake,html.borne.b-tilted #brand,html.borne.b-tilted #home .b-row2 .menu a,html.borne.b-tilted #home .cabinets .cab{animation:none!important}}
+/* 8 nov., 2 h 55 (Mauk Tenieb : « ta plante est infâme, grosse, découpée avec le cul ») : la photo du myrte s affiche entière, d un tenant (fini le pot rogné, le feuillage grossi et tranché en ellipse) ; 70 % de la hauteur du toit, posée au ras du meuble ; la plante assoiffée se fond par-dessus selon le manque de soin */
+html.borne:not([data-prog]) .b-roof .b-pot.b-pot{height:70%!important;align-self:flex-end!important}
+html.borne .b-plant .p-pot{clip-path:none!important}
+html.borne .b-plant .p-fo{display:none!important}
+/* 8 nov. (Mauk Tenieb, 15 h 40 : « il est parfois trop gros ») : au téléphone, la plaque Mauk Tenieb reste plus étroite qu'une touche de la console (140 px contre 110 px de touche à 360 px de large) */
+@media (max-width:900px){
+html.borne:not([data-prog],[data-mode=device],[data-habit=fauneye],.b-immersion):not(#r1):not(#r2):not(#r3) .b-plate .b-badge{width:clamp(88px,26vw,112px)!important;height:auto!important}
+html.borne:not(#r1):not(#r2):not(#r3) .b-plate .b-badge b{font-size:.76rem!important;letter-spacing:.18em!important;margin-right:-.18em}}
+/* 8 nov. (Mauk Tenieb, 16 h 20) : la plaque Mauk Tenieb devient une vraie plaque photographiée, émail noir et cadre de laiton, une par skin ; le nom reste dans la page pour les lecteurs d'écran */
+html.borne:not(#p1):not(#p2):not(#p3) .b-plate .b-badge{background:url(plaque-bois.webp) center/contain no-repeat!important;box-shadow:none!important;border:0!important;border-radius:0!important;filter:drop-shadow(0 4px 5px rgba(0,0,0,.55))!important;aspect-ratio:4.44/1;height:auto!important;min-height:44px!important}
+html.borne[data-skin=metal]:not(#p1):not(#p2):not(#p3) .b-plate .b-badge{background-image:url(plaque-metal.webp)!important;aspect-ratio:4.57/1}
+html.borne:not(#p1):not(#p2):not(#p3) .b-plate .b-badge::before,html.borne:not(#p1):not(#p2):not(#p3) .b-plate .b-badge::after{display:none!important}
+html.borne:not(#p1):not(#p2):not(#p3) .b-plate .b-badge b{color:transparent!important;text-shadow:none!important}
+@media (max-width:900px) and (max-height:500px) and (orientation:landscape){html.borne:not([data-prog],[data-mode=device],[data-habit=fauneye],.b-immersion):not(#r1):not(#r2):not(#r3) .b-plate .b-badge{width:92px!important}}
+
+/* 10 nov. (Mauk Tenieb, 17 h 33) : la plante sans contour au survol ni au clic ; un halo chaud à la place */
+html.borne .b-pot{outline:0!important;-webkit-tap-highlight-color:transparent}
+html.borne .b-pot .b-plant{transition:filter .35s ease}
+html.borne .b-pot:hover .b-plant,html.borne .b-pot:focus-within .b-plant,html.borne .b-pot.open .b-plant{filter:drop-shadow(0 4px 4px rgba(0,0,0,.5)) drop-shadow(0 0 9px rgba(255,206,130,.55)) drop-shadow(0 0 22px rgba(255,170,80,.25))}
+
+/* 13 nov. 2026 — passe anti-IA (critique Impeccable, décisions de Mauk Tenieb) : voyant « online » en cabochon à incandescence fixe, date sans verre flouté, points de navigation en LED nette, zéro halo sans décalage sur ce qui n'émet pas */
+html.borne .b-online i{animation:none!important;background:radial-gradient(circle at 35% 35%,#ffd59a,#e08a00 55%,#7a4a00)!important;box-shadow:inset 0 -1px 1px rgba(0,0,0,.5),0 1px 0 rgba(255,255,255,.15)!important}
+html.borne .b-date,html .b-date{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+html.borne .b-dot.on{box-shadow:inset 0 -1px 1px rgba(0,0,0,.4)!important}
+/* 13 nov. 2026 (Mauk Tenieb : « la minibarre est mal incrustée » dans FaunEye) : sur le flanc de bois, la barre devient une planchette de noyer sombre à filet de laiton, comme la barre de lecture du BakuBook */
+html.borne[data-habit=fauneye] .b-bezelfoot{background:linear-gradient(180deg,#3a2416,#22150b)!important;border-top:2px solid #b8892f!important;border-bottom:1px solid #120a05!important;box-shadow:inset 0 1px 0 rgba(240,213,140,.18),0 2px 6px rgba(0,0,0,.55)!important;border-radius:4px}
+html.borne[data-habit=fauneye] .b-bezelfoot::before,html.borne[data-habit=fauneye] .b-bezelfoot::after{display:none!important}
+/* 13 nov. 2026, passe anti-IA de la couche commune (Mauk Tenieb : « beaucoup de la DA fait IA ») : la lueur reste aux objets qui émettent (diodes, afficheurs, tube, touche rétroéclairée) ; titres, menus, dés, chiffres imprimés et pièces d'échecs gardent une ombre portée d'encre, sans halo */
+html.borne :is(.brand,.logo,.msg .big,.over h2,.kdrop,.cab .bigdie,.heroText .logo,.count,.menu a,.menu button,.copy b,.cab.dice b,.cab .num,.kgain,.stage .rot,.sig,.dk.kal,.champ .chT b,.stage .kdie .d,.stage .kdie b,.score .kd,#radio-toggle #radio-note,[data-swap=bio] small,[data-swap=bio] span,.spot.won){text-shadow:0 1px 0 rgba(0,0,0,.6)!important}
+html.borne :is(.cab.dice b,.spot.won)::after,html.borne .guide::before,html.borne .guide::after{text-shadow:0 1px 0 rgba(0,0,0,.6)!important}
+html.borne #kg-root #chess-board .piece{text-shadow:0 1px 2px rgba(0,0,0,.9)!important}
+html.borne #m-board .card.kcur,html.borne #chess-board .sq.kcur{box-shadow:none!important}
+html.borne :is(#chess,#mem,#mm-panel,#hang-panel,#bb-panel,#konklave-panel) button:active{box-shadow:inset 0 2px 3px rgba(0,0,0,.45)!important}
+html.borne .b-dot.on::after{box-shadow:none!important}
+html.borne .b-bezelfoot #koins.b-credit{background:linear-gradient(170deg,rgba(255,255,255,.07) 0%,rgba(255,255,255,.015) 38%,transparent 40%),#070605!important}

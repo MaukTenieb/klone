@@ -1,0 +1,87 @@
+/* FotoFauna dans la borne : le logo devient le déclencheur ; le bouton rond s'efface */
+.logo.ff-trig{cursor:pointer;border-radius:30px;padding:4px 10px 4px 4px;margin-left:-4px;outline-offset:3px}
+.logo.ff-trig .mark{width:34px;height:34px;border-radius:50%;padding:4px;box-sizing:border-box;background:radial-gradient(circle at 40% 35%,#ffcf88,#e08a1e);color:#2a1404;box-shadow:0 2px 0 rgba(0,0,0,.35);transition:transform .1s}
+.logo.ff-trig:active .mark{transform:scale(.9)}
+.logo.ff-trig.live .mark{width:46px;height:46px;animation:ffp 1.6s ease-in-out infinite}
+.logo.ff-trig.vid .mark{background:radial-gradient(circle at 40% 35%,#ff8a72,#c8321e)}
+.logo.ff-trig.rec .mark{animation:ffr .8s steps(2) infinite}
+@keyframes ffp{50%{box-shadow:0 0 0 6px rgba(255,190,90,.25),0 2px 0 rgba(0,0,0,.35)}}
+@keyframes ffr{50%{box-shadow:0 0 0 7px rgba(255,80,50,.45)}}
+#shutter{display:none!important}
+.ff-modes button{white-space:nowrap}
+.ff-flip{font-size:20px;min-width:44px}
+.ff-flip.back{color:var(--acc)}
+.ff-done{font-size:18px;gap:6px;color:var(--acc)}
+.ff-done b{font:500 11px/1 var(--num);letter-spacing:.1em}
+.ff-ghost{position:absolute;z-index:3;pointer-events:none;opacity:.42;mix-blend-mode:screen}
+.ff-ghost[hidden]{display:none}
+.ff-strip{position:absolute;left:8px;right:8px;bottom:8px;z-index:4;display:flex;gap:6px;overflow-x:auto;padding:6px;border-radius:6px;background:rgba(10,9,6,.72)}
+.ff-strip[hidden]{display:none}
+.ff-shot{position:relative;flex:none;padding:0;border:0;border-radius:2px;background:#000;cursor:pointer;box-shadow:0 0 0 1px rgba(255,255,255,.25)}
+.ff-shot canvas{display:block;height:56px;width:auto}
+.ff-shot span{position:absolute;left:3px;bottom:2px;font:500 10px/1 var(--num,monospace);color:#fff;text-shadow:0 1px 2px #000}
+.shutterRow{flex-wrap:wrap!important;row-gap:8px!important;max-width:100%}
+/* le viseur déclenche : curseur de visée, cercle bref à l'endroit de l'appui */
+.stage.ff-live{cursor:crosshair}
+.ff-tap{position:absolute;z-index:6;width:70px;height:70px;margin:-35px 0 0 -35px;border-radius:50%;pointer-events:none;box-shadow:0 0 0 3px rgba(255,255,255,.85);animation:fftap .5s ease-out forwards}
+@keyframes fftap{from{transform:scale(.4);opacity:1}to{transform:scale(1.3);opacity:0}}
+
+/* grammaire commune : cibles de 44 px ; un seul déclencheur visible caméra ouverte ; le pied de page s'efface */
+.pvMode button,.key,.tabs button,.gchip,.fam{min-height:44px}
+.stageWrap.live~* #bShoot,html:has(.stageWrap.live) #bShoot{display:none!important}
+footer.credit{display:none!important}
+#fams{overflow-x:auto;max-width:100%;flex-wrap:nowrap}
+
+/* i3 : accents dans la palette de la borne (borne-fotofauna.js recopie --pal-accent dans --acc, --acc2 et --edge) */
+.status{font-size:12px}
+/* puces : chaque arrêt du défilement tombe sur le bord d'une puce entière */
+#fams,.subs,.gchips{scroll-snap-type:x proximity;scroll-padding-inline:0}
+#fams{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 24px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 24px),transparent)}
+#fams .fam,.gchip{scroll-snap-align:start}
+/* commandes : la colonne se mesure elle-même */
+#ctrl{container:ffctrl/inline-size}
+/* tête à l'ordinateur : le logo sur sa ligne, puis TAKE, OPEN et ⋯ sur une même rangée ; au téléphone, tout tient sur une rangée */
+@media (min-width:700px){
+  header.top{display:grid!important;grid-template-columns:1fr 1fr 44px;gap:8px;align-items:center}
+  header.top .logo{grid-column:1/-1;margin:0!important;justify-self:start}
+  header.top #bShoot,header.top #bOpen{width:100%;justify-content:center}
+}
+/* rangée d'actions : quatre cases égales ; sous 440 px de colonne, le mot seul */
+#actions{display:grid!important;grid-template-columns:repeat(4,1fr);gap:6px}
+#actions .key{width:100%;min-width:0;margin:0!important;justify-content:center;padding-inline:4px}
+@container ffctrl (max-width:439px){#actions .key svg{display:none}}
+/* champ de recherche : jusqu'à 360 px de large, SHUFFLE garde son pictogramme */
+@media (max-width:360px){html #bRand#bRand{font-size:0!important;gap:0!important;min-width:44px;justify-content:center}}
+
+/* i3 cycle 2 : onglets et boutons de tête à 44 px ; flèche de suite sur les rangées de puces */
+html .tabs button,html #laboBtn{min-height:44px!important}
+html header.top :is(#bShoot,#bOpen,#bMenu){min-width:44px!important;min-height:44px}
+.ff-row{position:relative}
+.ff-more{position:absolute;right:0;top:50%;transform:translateY(-50%);width:44px;height:44px;border:0;border-radius:4px;
+  background:linear-gradient(90deg,transparent,var(--bg,#0b0a0e) 45%);color:var(--acc);font:700 18px/44px 'DM Mono',monospace;text-align:right;padding:0 6px;cursor:pointer;display:none;z-index:2}
+.ff-row.more .ff-more{display:block}
+.ff-row:has(>.rail) .ff-more{right:-14px}
+html #laboBtn{min-width:44px!important}html header.top .logo{min-height:44px}
+/* 15 nov. 2026 (Mauk Tenieb, RELAIS § 29, 2 h 56 et 3 h 01 : « superbe, peu verbeux : que des pictogrammes ») : KamOrhogo sans texte explicatif ; les boutons à picto gardent leur nom en aria-label et en infobulle ; les fiches de la grille gardent l'image, le nom du rendu choisi passe en tête */
+.hint,#keysForm>p,#engSum,#puterSum,.lookBar .lf,.lookBar .ls,.lookBar .lh,#count,#pane-ai .tool>h3,#pane-lab .tool>h3{display:none!important}
+#grid .frame>b,#grid .frame>i{display:none!important}
+.kpt{position:absolute!important;width:1px!important;height:1px!important;overflow:hidden!important;clip:rect(0 0 0 0)!important;white-space:nowrap!important}
+#goImg .ic,#goVid .ic{width:24px;height:24px}
+.tool.kshut{display:none!important}
+.kkey{display:grid;place-items:center;min-width:44px;min-height:44px;margin:8px 0 0 auto}
+/* 16 nov. 2026, lot 1 « carcasse » (Mauk Tenieb, 0 h 01 : « prendre en main le caméscope en entier ») :
+   téléphone couché — la colonne entière défile, les onglets restent en tête, la grille des rendus retrouve toute la hauteur ;
+   cibles de 44 px partout ; la pellicule passe au-dessus du compteur et de la date ; micro armé visible dans l'écran */
+@media (orientation:landscape) and (max-height:480px){
+  html.ike-on .ctrl{overflow-y:auto!important;overscroll-behavior:contain;scroll-snap-type:y proximity}
+  html.ike-on .ctrl .inspector{height:auto!important;flex:none!important;overflow:visible!important}
+  html.ike-on .ctrl #pane-looks,html.ike-on .ctrl .pane,html.ike-on .ctrl .browse{height:auto!important;max-height:none!important;flex:none!important;overflow:visible!important}
+  html.ike-on .ctrl .dock{position:sticky!important;top:0;z-index:12;background:var(--panel,#14110d);scroll-snap-align:start}
+}
+.sw button{height:44px!important}
+#q{min-height:44px}
+#bRand{min-width:44px!important;min-height:44px!important;justify-content:center}
+.gchip,.fam{min-width:44px}
+.fob{position:relative}.fob::after{content:"";position:absolute;inset:-4px -13px}
+.ff-strip{bottom:calc(8px + 2.6em)}
+#hMode .hMic{display:inline-block!important;width:1.05em;height:1.05em;margin-left:.6em;vertical-align:-.15em;color:#ff5a4a;filter:drop-shadow(0 0 3px rgba(255,80,60,.7))}
