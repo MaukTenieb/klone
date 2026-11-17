@@ -186,7 +186,7 @@ function ouverture(t){var p=(t-t0)/1100;if(p>=1)return;for(var y=0;y<PH;y++){var
 var der=0;
 function dessine(t){meuble();var sc=ecran(t);enseigne(t);panneau(t);fente(t);if(!reduit)ouverture(t);encode();return sc;}
 var reduit=matchMedia('(prefers-reduced-motion:reduce)').matches;
-function boucle(t){requestAnimationFrame(boucle);if(t-der<70)return;der=t;dessine(t);}
+function boucle(){dessine(performance.now());setTimeout(boucle,70);}
 /* ===== Taille : la borne entière, un nombre entier de pixels physiques par case ===== */
 function fit(){var d=devicePixelRatio||1,c=Math.max(3,Math.floor(Math.min(innerWidth*.98/CW,innerHeight*.98/CH)*d));el.style.setProperty('--c',(c/d)+'px');}
 /* ===== Gestes ===== */
@@ -207,7 +207,7 @@ addEventListener('keydown',function(e){
   if(e.key===' '){e.preventDefault();koin();}
   if(e.key==='Enter')va(KEYS[sel].href);});
 addEventListener('resize',fit);
-document.fonts.load('8px UN').then(function(){fit();t0=performance.now();requestAnimationFrame(boucle);});
+document.fonts.load('8px UN').then(function(){fit();t0=performance.now();boucle();});
 })();
 </script>
 </body>

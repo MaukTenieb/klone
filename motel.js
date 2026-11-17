@@ -148,7 +148,7 @@ function rendu(t){
 }
 /* ===== Mouvement : la caméra suit le pointeur, en douceur ===== */
 var tx=0,ty=0,cxv=0,cyv=0,der=0,t0=performance.now();
-function boucle(t){requestAnimationFrame(boucle);if(t-der<80)return;der=t;
+function boucle(){var t=performance.now();setTimeout(boucle,80);
   cxv+=(tx-cxv)*.18;cyv+=(ty-cyv)*.18;camera(cxv,cyv);
   tvI=.35+.25*hash(Math.floor(t/90),3);
   rendu(t-t0);
@@ -162,5 +162,5 @@ document.getElementById('m').addEventListener('click',function(e){var p=scr.pixe
   if(id==='tele')chaine=(chaine+1)%(MN.length+1);else if(id==='portrait')location.href='masks.html';else if(id==='porte')location.href='./';});
 document.getElementById('m').addEventListener('mousemove',function(e){var p=scr.pixelDe(e),id=idmap[p.y*PW+p.x];this.style.cursor=(id==='tele'||id==='portrait'||id==='porte')?'pointer':'default';});
 addEventListener('resize',function(){scr.fit(.98,.92);});
-document.fonts.load('8px UN').then(function(){scr.fit(.98,.92);camera(0,0);requestAnimationFrame(boucle);});
+document.fonts.load('8px UN').then(function(){scr.fit(.98,.92);camera(0,0);boucle();});
 })();
