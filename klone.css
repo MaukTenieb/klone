@@ -18,3 +18,6 @@ pre span[data-a]{cursor:pointer}
 .ansi{font-size:var(--c,8px)}
 .ansi>div{height:var(--c,8px);line-height:var(--c,8px);white-space:pre;overflow:hidden}
 .ansi>div>span{display:inline-block;height:100%;vertical-align:top}
+.son{position:fixed;right:max(10px,env(safe-area-inset-right));bottom:max(10px,env(safe-area-inset-bottom));z-index:10;font:20px/1 "UN",monospace;color:var(--ambre)}
+.son .barre{position:absolute;left:12px;right:12px;top:50%;height:2px;background:var(--rouge);transform:rotate(-45deg)}
+.son{position:fixed}

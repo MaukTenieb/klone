@@ -64,7 +64,6 @@ boite(-2.65,-2.08,.58,.72,-6.8,-6.35,M(R.creme,1.15),'lit');boite(-2.02,-1.45,.5
 quad(v3(-1.0,.005,-2.2),[1,0,0],[0,0,-1],1.9,1.3,M(R.creme,.95,'navajo'),null,true);
 boite(-2.85,-2.1,0,.55,-1.4,-1.05,M(['#120806','#2a1408','#4a2410','#6e3818','#94502a'],1,'valise'),'valise');
 boite(-2.55,-2.4,.55,.62,-1.3,-1.15,M(R.tole,1.3),'valise');
-boite(-1.2,-1.02,0,.08,-3.0,-2.72,M(R.bois,.8));boite(-.98,-.8,0,.08,-2.95,-2.67,M(R.bois,.8));
 /* commode et télé */
 boite(1.05,2.75,0,.82,-6.95,-6.2,M(R.bois,1,'tiroirs'),'commode');
 boite(1.25,2.55,.82,1.72,-6.9,-6.25,{avant:M(R.bois,1,'ecran'),dessus:M(R.bois),gauche:M(R.bois),droite:M(R.bois),arriere:M(R.bois),dessous:M(R.bois)},'tele');
@@ -72,7 +71,7 @@ boite(1.25,2.55,.82,1.72,-6.9,-6.25,{avant:M(R.bois,1,'ecran'),dessus:M(R.bois),
 var ANT=[[1.9,1.72,-6.6,1.55,2.15,-6.6],[1.9,1.72,-6.6,2.3,2.1,-6.6]];
 /* appliques */
 var LUM=[{p:v3(-.02,1.95,Z0+.15),i:1.25,c:'#ffe3a0'},{p:v3(1.35,1.95,Z0+.15),i:1.25,c:'#ffe3a0'},{p:v3(1.9,1.25,-6.0),i:.5,c:'#9fd8ff'}];
-LUM.slice(0,2).forEach(function(l){boite(l.p[0]-.16,l.p[0]+.16,l.p[1]-.2,l.p[1]+.12,Z0+.01,Z0+.14,M(['#b08040','#ffd27a','#ffe3a0','#fff4d0'],1,'emet'),'lampe');F.slice(-6).forEach(function(f){f.trait=false;});});
+LUM.slice(0,2).forEach(function(l){boite(l.p[0]-.16,l.p[0]+.16,l.p[1]-.2,l.p[1]+.12,Z0+.01,Z0+.14,M(['#b08040','#ffd27a','#ffe3a0','#fff4d0'],1,'emet'),'lampe');F.slice(-6).forEach(function(f){f.trait='#7a4a14';});});
 /* portrait au mur : Unkle Maukie */
 boite(.22,1.12,1.28,2.3,Z0+.01,Z0+.05,{avant:M(R.bois,1,'portrait'),dessus:M(R.bois),gauche:M(R.bois),droite:M(R.bois),arriere:M(R.bois),dessous:M(R.bois)},'portrait');
 /* ===== Caméras ===== */
@@ -142,7 +141,7 @@ function rendu(t){
   });
   /* trait épais : les arêtes des objets, cachées derrière ce qui les masque */
   var ACT={tele:1,portrait:1,porte:1};var lueur=['#6a3a10','#a0601a','#ffa726','#ffe3a0'][Math.floor((Math.sin(t/420)+1)*1.99)];
-  F.forEach(function(fc){if(!fc.trait&&!ACT[fc.id])return;var trait=ACT[fc.id]?lueur:TRAIT;var ctr=add(fc.o,add(mul(fc.eu,fc.lu/2),mul(fc.ev,fc.lv/2))),vv=cam.ortho?vue:sub(cam.C,ctr);if(dot(fc.n,vv)<=0)return;
+  F.forEach(function(fc){if(!fc.trait&&!ACT[fc.id])return;var trait=ACT[fc.id]?lueur:(typeof fc.trait==='string'?fc.trait:TRAIT);var ctr=add(fc.o,add(mul(fc.eu,fc.lu/2),mul(fc.ev,fc.lv/2))),vv=cam.ortho?vue:sub(cam.C,ctr);if(dot(fc.n,vv)<=0)return;
     var Pw=[fc.o,add(fc.o,mul(fc.eu,fc.lu)),add(add(fc.o,mul(fc.eu,fc.lu)),mul(fc.ev,fc.lv)),add(fc.o,mul(fc.ev,fc.lv))];
     for(var e=0;e<4;e++){var a=Pw[e],b=Pw[(e+1)%4],n=24;for(var s2=0;s2<=n;s2++){var p=add(a,mul(sub(b,a),s2/n)),q=projette(p),X=Math.round(q[0]-.5),Y=Math.round(q[1]-.5);
       if(X<0||Y<0||X>=PW||Y>=PH)continue;var z=cam.ortho?q[2]:q[2];if(z<=scr.zb[Y*PW+X]+.06)scr.px[Y*PW+X]=trait;}}});
@@ -168,7 +167,7 @@ addEventListener('keydown',function(e){if(e.key==='ArrowLeft')tx=Math.max(-1,tx-
   if(e.key==='Enter'||e.key===' ')chaine=(chaine+1)%(MN.length+1);if(e.key==='Escape')location.href='./';});
 function cherche(p){var best=null;for(var r=0;r<=6&&!best;r++)for(var dy=-r;dy<=r&&!best;dy++)for(var dx=-r;dx<=r;dx++){var X=p.x+dx,Y=p.y+dy;if(X<0||Y<0||X>=PW||Y>=PH)continue;var id=idmap[Y*PW+X];if(id==='tele'||id==='portrait'||id==='porte'){best=id;break;}}return best;}
 document.getElementById('m').addEventListener('click',function(e){var id=cherche(scr.pixelDe(e));
-  if(id==='tele')chaine=(chaine+1)%(MN.length+1);else if(id==='portrait')location.href='masks.html';else if(id==='porte')location.href='./';});
+  if(id==='tele'){chaine=(chaine+1)%(MN.length+1);if(window.SON)SON.joue('crt');}else if(id==='portrait')location.href='masks.html';else if(id==='porte')location.href='./';});
 document.getElementById('m').addEventListener('mousemove',function(e){var id=cherche(scr.pixelDe(e));this.style.cursor=(id==='tele'||id==='portrait'||id==='porte')?'pointer':'default';});
 addEventListener('resize',function(){scr.fit(.98,.92);});
 document.fonts.load('8px UN').then(function(){scr.fit(.98,.92);camera(0,0);boucle();});

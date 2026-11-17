@@ -34,6 +34,12 @@ Juges : direction artistique (tools/juges/JUGE-DA.md), ergonomie et mobile (tool
 - 13. Borne : ombre de contact et flaque de lumière de l'écran sur le sol.
 - 14. Motel : lampes, portrait agrandi, tapis tissé, valise, chaussures, arêtes de coupe des murs.
 
+## Écarts traités après « Qu'est-ce qui ne va pas ? » (17 nov. 2026)
+
+- 16. Le tableau des scores inventé sort de l'écran ; SkopoRhogo le remplace, comme le veut DA.md.
+- 17. Dix-huit Masks sur dix-huit.
+- 18. Le son : ronronnement, Koin qui tombe, touches, crans de la manette, néon qui grésille, télé du motel.
+
 ## Écarts ouverts
 
 1. Cibles tactiles : zones élargies sur la borne et le motel (recherche de l'objet actif dans un rayon de six pixels) ; à mesurer sur téléphone réel.
@@ -44,4 +50,5 @@ Juges : direction artistique (tools/juges/JUGE-DA.md), ergonomie et mobile (tool
 
 - Encres des Masks : DA.md garde aux Masks leurs couleurs ; le phosphore reste la seconde encre, au choix du visiteur.
 
+19. Masks : la reprise à la main reste limitée aux yeux, à la bouche et aux couleurs propres d'Unkle Maukie et de Honey Buzzard ; les quinze autres sortent de la chaîne seule.
 15. Motel : rendu complet à chaque image ; à mesurer sur téléphone d'entrée de gamme.
