@@ -44,8 +44,9 @@ function rendre(){
   var m=MASKS[ORDRE[n]],P=m.pal,o='';
   function c(k){var h=P[k]||'#0b0908';return mode?phos(h):h;}
   for(var y=0;y<m.g.length;y++){var G=m.g[y],F=m.f[y],B=m.b[y],run='',cf=null,cb=null;o+='<div>';
-    var th=performance.now(),hh2=window.HAOMA&&HAOMA.intensite();for(var x=0;x<G.length;x++){var f=c(F[x]),b=c(B[x]);if(hh2){f=HAOMA.ink(f,x,y,th);b=HAOMA.ink(b,x+1,y,th);}
-      if(f!==cf||b!==cb){if(run)o+='<span style="color:'+cf+';background:'+cb+'">'+esc(run)+'</span>';run='';cf=f;cb=b;}run+=G[x];}
+    var th=performance.now(),hh2=window.HAOMA&&HAOMA.intensite();for(var x=0;x<G.length;x++){var gx=x,gy=y;if(hh2){var mp=HAOMA.map(x,y*2,G.length,m.g.length*2,th);gx=Math.max(0,Math.min(G.length-1,Math.round(mp[0])));gy=Math.max(0,Math.min(m.g.length-1,Math.round(mp[1]/2)));}
+    var f=c(m.f[gy][gx]),b=c(m.b[gy][gx]),gl=m.g[gy][gx];if(hh2){f=HAOMA.ink(f,x,y,th);b=HAOMA.ink(b,x+1,y,th);}
+      if(f!==cf||b!==cb){if(run)o+='<span style="color:'+cf+';background:'+cb+'">'+esc(run)+'</span>';run='';cf=f;cb=b;}run+=gl;}
     o+='<span style="color:'+cf+';background:'+cb+'">'+esc(run)+'</span></div>';}
   pre.innerHTML=o;
   document.getElementById('nom').textContent=m.nom;

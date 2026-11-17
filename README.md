@@ -23,11 +23,14 @@ Unscii 8 (domaine public, viznut) pour toute image ; VT323 et Press Start 2P pou
 
 ## Haoma
 
-`haoma.js` pose une lentille sur chaque lieu, entre le dessin et l'encodage en texte. Le Haoma de l'Avesta, le Soma védique, l'amanite tue-mouches de Wasson : la perception change, les lieux et les jeux restent les mêmes.
+`haoma.js` pose une lentille sur chaque lieu, entre le dessin et l'encodage en texte. Haoma : la boisson de l'Avesta, le Soma védique, l'amanite tue-mouches de Wasson. Les lieux et les jeux restent les mêmes ; la vue change.
 
-- Une dose : la palette coule vers l'amanite (nuit, ecchymose, vermillon, safran, or vert, os) ; la pièce respire neuf secondes par souffle.
-- Deux doses : la pupille s'ouvre et chaque lumière bave ; les verrues de l'amanite poussent sur les surfaces claires ; l'image d'avant traîne ; les yeux des dix mille espions de Mithra s'ouvrent dans le noir et suivent le pointeur.
-- Trois doses : la pièce enfle et rétrécit toutes les vingt-trois secondes ; un scarabée longe les murs ; des lettres deviennent H, O, M.
-- Quatre doses : tout blanchit, retour à jeun.
+Chaque dose ajoute une des quatre form constants de Heinrich Klüver (1928), que Bressloff et Cowan (2001) ramènent à des ondes planes dans le cortex visuel V1. Chacune se calcule comme un effet de démo des années 1990, avec le lieu pour texture :
 
-La dose suit le kandiKtat d'un lieu à l'autre : montée quinze secondes, plateau sept minutes, descente trois minutes. Avec la note ouverte, deux sinus battent sous le souffle.
+- Grille : trois ondes planes à 60° tracent un nid d'abeille dans la lumière ; la pièce respire.
+- Toile : l'angle se replie en six secteurs miroirs.
+- Spirale : l'angle tourne avec le logarithme du rayon.
+- Tunnel : une table d'angle et une table de distance enroulent le lieu en tunnel, comme dans Second Reality de Future Crew (1993).
+- La cinquième dose blanchit tout et rend la vue à jeun.
+
+Cinq encres : nuit, ecchymose, vermillon, safran, os. La pupille s'ouvre et chaque lumière bave ; l'image d'avant traîne ; les yeux des espions de Mithra s'ouvrent dans le noir et suivent le regard ; un scarabée longe les murs ; des lettres deviennent H, O, M. La dose suit le kandiKtat d'un lieu à l'autre : montée quinze secondes, plateau sept minutes, descente trois minutes.
