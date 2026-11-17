@@ -62,14 +62,14 @@ function mot(s,cx,y,ech,c,lit,ey){ey=ey||ech;var w=s.length*6*ech-ech,x0=Math.ro
 function meuble(){
   for(var i=0;i<PW*PH;i++)px[i]=SALLE;
   /* sol : la lueur de l'écran tombe devant la borne */
-  rect(0,170,PW-1,PH-1,function(x,y){var d=Math.abs(x-80)/80,L=Math.max(0,.9-d)*(y-168)/16*ecranL;return rampe(R.sol,L,x,y);});
-  /* flancs en fuite, peints : trois bandes obliques (ambre, cyan, rouge) */
-  for(var y=4;y<=182;y++){var w=Math.round(4+y*.035);
-    for(var k=0;k<w;k++){var xl=18-w+k,xr=141+w-k,t=(y+k*3)%60;
-      var band=t<10?0:t<16?1:t>=40&&t<46?2:-1;
-      var L=lum(xl,y)*.55;
-      set(xl,y,band>=0?rampe(R.bande[band],L*1.2,xl,y):rampe(R.bois,L*.7,xl,y));
-      set(xr,y,band>=0?rampe(R.bande[band],L*1.2,xr,y):rampe(R.bois,L*.7,xr,y));}}
+  rect(0,170,PW-1,PH-1,function(x,y){var d=Math.abs(x-80)/80,L=Math.max(0,1.1-d)*Math.min(1,(y-168)/10)*ecranL*1.2;return rampe(R.sol,L,x,y);});
+  /* flancs en fuite, peints : trois bandes obliques franches, ambre, cyan, rouge */
+  for(var y=4;y<=180;y++){var w=Math.round(4+y*.035);
+    for(var k=0;k<w;k++){var xl=18-w+k,xr=141+w-k,t=((y-k*2)%72+72)%72;
+      var band=t<12?0:(t>=18&&t<26)?1:(t>=32&&t<38)?2:-1;
+      var L=lum(xl,y)*.6*(1.1-y/300);
+      set(xl,y,band>=0?rampe(R.bande[band],L*1.3,xl,y):rampe(R.bois,L*.6,xl,y));
+      set(xr,y,band>=0?rampe(R.bande[band],L*1.3,xr,y):rampe(R.bois,L*.6,xr,y));}}
   /* montants de face, jonc rouge sur l'arête */
   rect(18,2,29,180,mat(R.bois));rect(130,2,141,180,mat(R.bois));
   rect(18,2,18,180,mat(R.jonc,1.2));rect(141,2,141,180,mat(R.jonc,1.2));
@@ -97,13 +97,14 @@ function meuble(){
   rect(58,147,101,174,mat(R.tole,1.1));
   rect(58,147,101,147,mat(R.tole,1.6));rect(58,147,58,174,mat(R.tole,1.4));
   rect(19,178,140,181,function(x,y){return '#060404';});
+  rect(10,182,149,183,function(x,y){return bay(x,y)<.6?'#030202':'#0b0908';});
 }
 /* ===== Ce qui bouge ===== */
 var KEYS=[{x:38,c:AMBRE,href:'masks.html'},{x:58,c:'#e2c27a',href:'motel.html'},{x:102,c:VERT,href:null},{x:122,c:CYAN,href:null}];
 var sel=0,koins=3,etat='repos',tKoin=-1;
 try{koins=+(localStorage.getItem('klone:koins')||3);}catch(e){}
 function panneau(t){
-  KEYS.forEach(function(k,i){var on=!!k.href,pulse=on?(.55+.45*Math.sin(t/700+i*1.3)):.12;
+  KEYS.forEach(function(k,i){var on=!!k.href,pulse=on?(.55+.45*Math.sin(t/700+i*1.3)):.35;
     if(etat==='repos'&&on)pulse=((Math.floor(t/240)%4)===i)?1.25:.55;
     if(etat==='credit'&&on)pulse=Math.floor(t/150)%2?1.3:.35;
     if(i===sel&&on)pulse=Math.max(pulse,1.1);
@@ -111,7 +112,7 @@ function panneau(t){
     for(var y=119;y<=125;y++){var ww=Math.round(7+(y-119)*.4);for(var x=k.x-ww;x<=k.x+ww;x++){
       var e=y===119||x===k.x-ww?1.3:y===125||x===k.x+ww?.5:1,L=pulse*e*(.85+.3*bay(x,y));
       set(x,y,'#'+r.map(function(v){return ('0'+Math.min(255,Math.round(v*Math.min(1.3,L))).toString(16)).slice(-2);}).join(''));}}
-    if(i===sel&&on){for(var x2=k.x-6;x2<=k.x+6;x2+=2)set(x2,127,PHOS);}
+    if(on&&pulse>1)for(var x2=k.x-7;x2<=k.x+7;x2++)if(bay(x2,128)<.5)set(x2,128,k.c);/* la lueur tombe sur le panneau */
   });
   /* manette : rotule, tige, boule rouge qui oscille au repos */
   var jx=80+(etat==='repos'?Math.round(Math.sin(t/900)*2):0);
@@ -120,10 +121,12 @@ function panneau(t){
   for(var a=-4;a<=4;a++)for(var b=-4;b<=4;b++)if(a*a+b*b<=17){var X=jx+b,Y=116+a,hl=(a<-1&&b<0)?PHOS:(a+b>3?'#5a1410':ROUGE);set(X,Y,hl);}
 }
 function fente(t){
-  var lit=etat==='credit'?1.3:(.7+.3*Math.sin(t/500));
-  rect(64,151,95,153,function(x,y){return rampe(R.bande[1],lit,x,y);});/* étiquette cyan */
-  rect(76,157,83,166,function(x,y){return x===79||x===80?'#050303':rampe(R.jonc,lit*(1.1-Math.abs(x-79.5)/10),x,y);});
-  rect(70,170,89,172,mat(R.tole,.6));
+  var lit=etat==='credit'?1.3:(Math.floor(t/500)%2?1.15:.55);
+  rect(64,150,95,152,function(x,y){return rampe(R.bande[1],.9,x,y);});/* étiquette cyan INSERT KOIN */
+  rect(74,155,85,168,mat(R.tole,1.5));rect(75,156,84,167,mat(R.tole,.7));
+  rect(79,158,80,165,function(x,y){return lit>1?PHOS:'#8a5a20';});
+  if(lit>1)[[78,158],[81,158],[78,165],[81,165]].forEach(function(p){set(p[0],p[1],'#b07a30');});
+  rect(70,171,89,172,mat(R.tole,.5));
   /* la Koin roule et tombe */
   if(tKoin>=0){var p=(t-tKoin)/900;if(p<1){var kx=Math.round(108-p*28),ky=Math.round(140+Math.min(1,p*1.6)*20);
     for(var a=-3;a<=3;a++)for(var b=-3;b<=3;b++)if(a*a+b*b<=10)set(kx+b,ky+a,(a+b+Math.floor(p*12))%3===0?PHOS:AMBRE);}else tKoin=-1;}
@@ -194,8 +197,8 @@ function pxDe(e){var r=el.getBoundingClientRect();return {x:Math.floor((e.client
 function va(h){if(!h)return;etat='depart';setTimeout(function(){location.href=h;},260);}
 function koin(){koins=Math.min(99,koins+1);try{localStorage.setItem('klone:koins',koins);}catch(e){}tKoin=performance.now();setTimeout(function(){etat='credit';},700);}
 function cible(p){
-  if(p.x>=56&&p.x<=103&&p.y>=146&&p.y<=175)return 'fente';
-  if(p.y>=116&&p.y<=128){for(var i=0;i<4;i++)if(Math.abs(p.x-KEYS[i].x)<=10&&KEYS[i].href)return 'k'+i;}
+  if(p.x>=54&&p.x<=105&&p.y>=143&&p.y<=178)return 'fente';
+  if(p.y>=110&&p.y<=134){for(var i=0;i<4;i++)if(Math.abs(p.x-KEYS[i].x)<=11&&KEYS[i].href)return 'k'+i;}
   if(p.x>=40&&p.x<=119&&p.y>=52&&p.y<=109)return 'ecran';
   return null;}
 el.addEventListener('click',function(e){var c=cible(pxDe(e));if(!c)return;

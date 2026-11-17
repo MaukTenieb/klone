@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>MASKS · Klone</title>
+<link rel="icon" href="favicon.png">
 <link rel="stylesheet" href="klone.css">
 <style>
 body{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2vmin}
@@ -14,14 +15,15 @@ body{display:flex;flex-direction:column;align-items:center;justify-content:cente
 .plaque b{font-weight:normal;min-width:16ch;text-align:center;text-shadow:0 0 .6em rgba(255,167,38,.45)}
 .encres{position:fixed;right:max(6px,env(safe-area-inset-right));bottom:max(6px,env(safe-area-inset-bottom));display:flex;z-index:10}
 .encres button{font:14px/1 "UN",monospace;letter-spacing:0}
-.num{position:fixed;right:max(16px,env(safe-area-inset-right));top:max(14px,env(safe-area-inset-top));font:10px/1 "PS",monospace;color:var(--sourd)}
+.num{display:flex;gap:8px;justify-content:center}.pt{display:block;width:6px;height:6px;background:#3a2410}.pt.on{background:var(--ambre)}
+.plaque .picto{font-size:clamp(14px,3vmin,22px)}
+.boom{font-size:20px}
 @media (prefers-reduced-motion:reduce){#p.ouvre{animation:none}}
 </style>
 </head>
 <body>
 <div id="p" class="ansi" role="img" aria-describedby="nom"></div>
-<div class="plaque"><button class="picto" id="prec" aria-label="Mask précédent">«</button><b id="nom"></b><button class="picto" id="suiv" aria-label="Mask suivant">»</button></div>
-<div class="num" id="num"></div>
+<div class="plaque-bloc"><div class="plaque"><button class="picto" id="prec" aria-label="Mask précédent">«</button><b id="nom"></b><button class="picto" id="suiv" aria-label="Mask suivant">»</button></div><div class="num" id="num"></div></div>
 <div class="encres"><button class="picto" id="m0" aria-label="Encres du Mask"></button><button class="picto" id="m1" aria-label="Phosphore"></button></div>
 <a class="boom" href="./" aria-label="Baku Boom">&lt;&lt;</a>
 <div class="balayage"></div>
@@ -46,13 +48,14 @@ function rendre(){
     o+='<span style="color:'+cf+';background:'+cb+'">'+esc(run)+'</span></div>';}
   pre.innerHTML=o;
   document.getElementById('nom').textContent=m.nom;
-  document.getElementById('num').textContent=(n<9?'0':'')+(n+1)+'/'+(ORDRE.length<10?'0':'')+ORDRE.length;
-  var pk=Object.keys(P).filter(function(k){return k!=='.'&&k!=='0'&&/[a-z]/.test(k);}).slice(0,4);
+  document.getElementById('num').innerHTML=ORDRE.map(function(k,i){return '<i class="pt'+(i===n?' on':'')+'"></i>';}).join('');
+  function lu(h){var c=rgb(h);return c[0]*.3+c[1]*.59+c[2]*.11;}
+  var pk=Object.keys(P).filter(function(k){return k!=='.'&&k!=='0'&&/[a-z]/.test(k);}).sort(function(a,b){return lu(P[b])-lu(P[a]);}).slice(0,4);
   var b0=document.getElementById('m0'),b1=document.getElementById('m1');
   b0.innerHTML=pk.map(function(k){return '<span style="color:'+P[k]+'">█</span>';}).join('');
   b1.innerHTML='<span style="color:#6e4210">█</span><span style="color:#b06a18">█</span><span style="color:#ffa726">█</span><span style="color:#ffe3a0">█</span>';
   b0.setAttribute('aria-pressed',mode===0);b1.setAttribute('aria-pressed',mode===1);
-  b0.style.opacity=mode===0?1:.45;b1.style.opacity=mode===1?1:.45;
+  b0.style.opacity=mode===0?1:.4;b1.style.opacity=mode===1?1:.4;b0.style.outline=mode===0?'1px solid #ffe3a0':'none';b1.style.outline=mode===1?'1px solid #ffe3a0':'none';
   fit();
 }
 /* Taille : un nombre entier de pixels physiques par case, la figure entière à l'écran */

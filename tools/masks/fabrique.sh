@@ -4,9 +4,19 @@ python3 $T/pixel.py $S/mask-unkle_maukie.png 120,250,720,900 112 12 um >/dev/nul
 python3 $T/pixel.py $S/mask-aube.png 40,190,700,900 112 12 au >/dev/null
 ENCRE=14 TOLFOND=40 python3 $T/pixel.py $S/mask-honey_buzzard.png 20,60,700,820 112 12 hb >/dev/null
 for m in um au; do python3 -c "import sys;m='$m';R=open(m+'.pix').read().rstrip('\n').split('\n');open(m+'.pix','w').write('\n'.join(R[:-5])+'\n')"; done
-python3 retouche_um.py
 for m in um au hb; do python3 $T/fond.py $m.pix $m.pal.json; python3 $T/lumiere.py $m.pix $m.pal.json; done
+python3 retouche_um.py
 python3 retouche_hb.py
+python3 - <<'Q'
+import json
+P=json.load(open('hb.pal.json'))
+for k,v in P.items():
+  if k in '.0' or not k.islower():continue
+  r,g,b=(int(v[i:i+2],16) for i in (1,3,5));l=(r+g+b)/3
+  if l<40:P[k]='#%02x%02x%02x'%(int(22+l*.5),int(26+l*.6),int(32+l*.8))
+  if l>235:P[k]='#f2eee2'
+json.dump(P,open('hb.pal.json','w'))
+Q
 python3 - <<'P'
 import json
 R=[list(r) for r in open('hb.pix').read().rstrip('\n').split('\n')]

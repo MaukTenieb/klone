@@ -60,23 +60,28 @@ var tissu={avant:M(R.creme,1,'navajo'),dessus:M(R.creme,1,'navajo'),gauche:M(R.c
 boite(-2.75,-1.35,.18,.58,-6.85,-3.6,tissu,'lit');
 boite(-2.75,-1.35,0,.18,-6.85,-3.6,M(R.bois,.8),'lit');
 boite(-2.65,-2.08,.58,.72,-6.8,-6.35,M(R.creme,1.15),'lit');boite(-2.02,-1.45,.58,.72,-6.8,-6.35,M(R.creme,1.15),'lit');
+/* tapis, valise, chaussures */
+quad(v3(-1.0,.005,-2.2),[1,0,0],[0,0,-1],1.9,1.3,M(R.creme,.95,'navajo'),null,true);
+boite(-2.85,-2.1,0,.55,-1.4,-1.05,M(['#120806','#2a1408','#4a2410','#6e3818','#94502a'],1,'valise'),'valise');
+boite(-2.55,-2.4,.55,.62,-1.3,-1.15,M(R.tole,1.3),'valise');
+boite(-1.2,-1.02,0,.08,-3.0,-2.72,M(R.bois,.8));boite(-.98,-.8,0,.08,-2.95,-2.67,M(R.bois,.8));
 /* commode et télé */
-boite(1.05,2.75,0,.82,-6.95,-6.2,M(R.bois,1,'tiroirs'),'tele');
+boite(1.05,2.75,0,.82,-6.95,-6.2,M(R.bois,1,'tiroirs'),'commode');
 boite(1.25,2.55,.82,1.72,-6.9,-6.25,{avant:M(R.bois,1,'ecran'),dessus:M(R.bois),gauche:M(R.bois),droite:M(R.bois),arriere:M(R.bois),dessous:M(R.bois)},'tele');
 /* antenne */
 var ANT=[[1.9,1.72,-6.6,1.55,2.15,-6.6],[1.9,1.72,-6.6,2.3,2.1,-6.6]];
 /* appliques */
 var LUM=[{p:v3(-.02,1.95,Z0+.15),i:1.25,c:'#ffe3a0'},{p:v3(1.35,1.95,Z0+.15),i:1.25,c:'#ffe3a0'},{p:v3(1.9,1.25,-6.0),i:.5,c:'#9fd8ff'}];
-LUM.slice(0,2).forEach(function(l){boite(l.p[0]-.12,l.p[0]+.12,l.p[1]-.14,l.p[1]+.1,Z0+.01,Z0+.14,M(['#b08040','#ffd27a','#ffe3a0','#fff4d0'],1,'emet'),'lampe');});
+LUM.slice(0,2).forEach(function(l){boite(l.p[0]-.16,l.p[0]+.16,l.p[1]-.2,l.p[1]+.12,Z0+.01,Z0+.14,M(['#b08040','#ffd27a','#ffe3a0','#fff4d0'],1,'emet'),'lampe');F.slice(-6).forEach(function(f){f.trait=false;});});
 /* portrait au mur : Unkle Maukie */
-boite(.3,1.0,1.4,2.2,Z0+.01,Z0+.05,{avant:M(R.bois,1,'portrait'),dessus:M(R.bois),gauche:M(R.bois),droite:M(R.bois),arriere:M(R.bois),dessous:M(R.bois)},'portrait');
+boite(.22,1.12,1.28,2.3,Z0+.01,Z0+.05,{avant:M(R.bois,1,'portrait'),dessus:M(R.bois),gauche:M(R.bois),droite:M(R.bois),arriere:M(R.bois),dessous:M(R.bois)},'portrait');
 /* ===== Caméras ===== */
 var cam={};
 function camera(px,py){
   if(MODE==='face'){var C=v3(.1+px*.5,1.55+py*.16,-.8),cible=v3(px*.25,1.05,-7),f=norm(sub(cible,C)),r=norm(cross(f,[0,1,0])),u=cross(r,f);
     cam={C:C,f:f,r:r,u:u,F:PW*.56,cx:PW/2,cy:PH*.44,ortho:false};}
-  else{var yaw=Math.PI/4+px*.08,pit=.55,f2=norm([-Math.sin(yaw)*Math.cos(pit),-Math.sin(pit),-Math.cos(yaw)*Math.cos(pit)]),r2=norm(cross(f2,[0,1,0])),u2=cross(r2,f2);
-    cam={C:v3(4,6,3),f:f2,r:r2,u:u2,S:PW/10.6,cx:PW/2+4,cy:PH*.52,ortho:true,centre:v3(0,1,-3.5)};}
+  else{var yaw=Math.PI/4,pit=Math.asin(Math.tan(Math.atan(.5))),f2=norm([-Math.sin(yaw)*Math.cos(pit),-Math.sin(pit),-Math.cos(yaw)*Math.cos(pit)]),r2=norm(cross(f2,[0,1,0])),u2=cross(r2,f2);
+    cam={C:v3(4,6,3),f:f2,r:r2,u:u2,S:PW/9.3,cx:PW/2+3,cy:PH*.5,ortho:true,centre:v3(0,1.1,-3.5)};}
 }
 function projette(p){var v=sub(p,cam.ortho?cam.centre:cam.C),x=dot(v,cam.r),y=dot(v,cam.u),z=dot(v,cam.f);
   if(cam.ortho)return [cam.cx+x*cam.S,cam.cy-y*cam.S,z+50];
@@ -91,6 +96,7 @@ function eclaire(p,n){var L=.1;for(var i=0;i<LUM.length;i++){var l=sub(LUM[i].p,
 var MN=window.MINIS?Object.keys(MINIS):[];
 function couleur(fc,p,u,v,x,y,t){var m=fc.mat,L=eclaire(p,fc.n)*m.k,r=m.r;
   switch(m.tex){
+  case 'valise':if(Math.abs(v-.5)<.06||Math.abs(u-.5)<.04)return rampe(R.tole,L*1.2,x,y);return rampe(r,L,x,y);
   case 'emet':return rampe(r,.55+.45*v+.2*Math.sin(t/700),x,y);
   case 'poil':L*=.8+.4*hash(Math.floor(u*22),Math.floor(v*22));return rampe(r,L,x,y);
   case 'enduit':L*=.95+.1*hash(Math.floor(u*5),Math.floor(v*7));if(v<.12)return rampe(R.bois,L,x,y);return rampe(r,L,x,y);
@@ -135,10 +141,12 @@ function rendu(t){
       var q=sub(p,fc.o);return couleur(fc,p,dot(q,fc.eu)/fc.lu*(fc.mat.tex==='navajo'||fc.mat.tex==='poil'||fc.mat.tex==='enduit'||fc.mat.tex==='plis'?fc.lu:1),dot(q,fc.ev)/fc.lv*(fc.mat.tex==='navajo'||fc.mat.tex==='poil'||fc.mat.tex==='enduit'||fc.mat.tex==='plis'?fc.lv:1),x,y,t);});
   });
   /* trait épais : les arêtes des objets, cachées derrière ce qui les masque */
-  F.forEach(function(fc){if(!fc.trait)return;var ctr=add(fc.o,add(mul(fc.eu,fc.lu/2),mul(fc.ev,fc.lv/2))),vv=cam.ortho?vue:sub(cam.C,ctr);if(dot(fc.n,vv)<=0)return;
+  var ACT={tele:1,portrait:1,porte:1};var lueur=['#6a3a10','#a0601a','#ffa726','#ffe3a0'][Math.floor((Math.sin(t/420)+1)*1.99)];
+  F.forEach(function(fc){if(!fc.trait&&!ACT[fc.id])return;var trait=ACT[fc.id]?lueur:TRAIT;var ctr=add(fc.o,add(mul(fc.eu,fc.lu/2),mul(fc.ev,fc.lv/2))),vv=cam.ortho?vue:sub(cam.C,ctr);if(dot(fc.n,vv)<=0)return;
     var Pw=[fc.o,add(fc.o,mul(fc.eu,fc.lu)),add(add(fc.o,mul(fc.eu,fc.lu)),mul(fc.ev,fc.lv)),add(fc.o,mul(fc.ev,fc.lv))];
     for(var e=0;e<4;e++){var a=Pw[e],b=Pw[(e+1)%4],n=24;for(var s2=0;s2<=n;s2++){var p=add(a,mul(sub(b,a),s2/n)),q=projette(p),X=Math.round(q[0]-.5),Y=Math.round(q[1]-.5);
-      if(X<0||Y<0||X>=PW||Y>=PH)continue;var z=cam.ortho?q[2]:q[2];if(z<=scr.zb[Y*PW+X]+.06)scr.px[Y*PW+X]=TRAIT;}}});
+      if(X<0||Y<0||X>=PW||Y>=PH)continue;var z=cam.ortho?q[2]:q[2];if(z<=scr.zb[Y*PW+X]+.06)scr.px[Y*PW+X]=trait;}}});
+  if(cam.ortho){var C1='#5a3a1c';[[X0,Y1,Z0,X1,Y1,Z0],[X0,Y1,Z0,X0,Y1,Z1],[X1,0,Z0,X1,Y1,Z0],[X0,0,Z1,X0,Y1,Z1]].forEach(function(a){var p=projette(v3(a[0],a[1],a[2])),q=projette(v3(a[3],a[4],a[5]));scr.ligne(p[0],p[1],q[0],q[1],C1);scr.ligne(p[0],p[1]-1,q[0],q[1]-1,'#8a5a2a');});}
   /* antenne */
   ANT.forEach(function(a){var p=projette(v3(a[0],a[1],a[2])),q=projette(v3(a[3],a[4],a[5]));scr.ligne(p[0],p[1],q[0],q[1],'#8a8290');});
   /* halo des appliques sur l'enduit, en trame */
@@ -158,9 +166,10 @@ document.getElementById('m').addEventListener('pointermove',function(e){var r=th
 addEventListener('deviceorientation',function(e){if(e.gamma==null)return;tx=Math.max(-1,Math.min(1,e.gamma/25));ty=Math.max(-1,Math.min(1,(45-e.beta)/30));});
 addEventListener('keydown',function(e){if(e.key==='ArrowLeft')tx=Math.max(-1,tx-.25);if(e.key==='ArrowRight')tx=Math.min(1,tx+.25);if(e.key==='ArrowUp')ty=Math.min(1,ty+.25);if(e.key==='ArrowDown')ty=Math.max(-1,ty-.25);
   if(e.key==='Enter'||e.key===' ')chaine=(chaine+1)%(MN.length+1);if(e.key==='Escape')location.href='./';});
-document.getElementById('m').addEventListener('click',function(e){var p=scr.pixelDe(e),id=idmap[p.y*PW+p.x];
+function cherche(p){var best=null;for(var r=0;r<=6&&!best;r++)for(var dy=-r;dy<=r&&!best;dy++)for(var dx=-r;dx<=r;dx++){var X=p.x+dx,Y=p.y+dy;if(X<0||Y<0||X>=PW||Y>=PH)continue;var id=idmap[Y*PW+X];if(id==='tele'||id==='portrait'||id==='porte'){best=id;break;}}return best;}
+document.getElementById('m').addEventListener('click',function(e){var id=cherche(scr.pixelDe(e));
   if(id==='tele')chaine=(chaine+1)%(MN.length+1);else if(id==='portrait')location.href='masks.html';else if(id==='porte')location.href='./';});
-document.getElementById('m').addEventListener('mousemove',function(e){var p=scr.pixelDe(e),id=idmap[p.y*PW+p.x];this.style.cursor=(id==='tele'||id==='portrait'||id==='porte')?'pointer':'default';});
+document.getElementById('m').addEventListener('mousemove',function(e){var id=cherche(scr.pixelDe(e));this.style.cursor=(id==='tele'||id==='portrait'||id==='porte')?'pointer':'default';});
 addEventListener('resize',function(){scr.fit(.98,.92);});
 document.fonts.load('8px UN').then(function(){scr.fit(.98,.92);camera(0,0);boucle();});
 })();
