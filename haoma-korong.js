@@ -29,10 +29,15 @@ function ecran(x,z){var d=z+FOCAL;return [ORIGIN_H+x*FOCAL/d,ORIGIN_V+FLOOR_Y*FO
 /* une tache d'huile : cœur noir à 90 %, liseré irisé jusqu'à 1,2 s, puis le noir sèche jusqu'à 3 s en se rétractant à 70 % ; trois gouttes indiquent le cap */
 function huile(c,q,age){var e=G().e,s=e.p.puck_size*2*(age<1.2?1:1-.3*(age-1.2)/1.8),P=ecran(q.x,q.z),Pl=ecran(q.x-s,q.z),Pf=ecran(q.x,q.z+s),Pn=ecran(q.x,q.z-s);
   var rx=Math.max(Math.abs(P[0]-Pl[0]),17),ry=Math.max(7,Math.abs(Pn[1]-Pf[1])/2),noir=age<1.2?.82:.82*Math.max(0,1-(age-1.2)/.6);
-  c.save();c.fillStyle='rgba(10,10,12,'+noir+')';c.beginPath();c.ellipse(P[0],P[1],rx,ry,0,0,6.2832);c.fill();
-  if(age<1.2){var ir=Math.max(.75,1-age/1.2*.25);try{var cg=c.createConicGradient(age*2,P[0],P[1]);cg.addColorStop(0,'rgba(0,255,255,'+ir+')');cg.addColorStop(.33,'rgba(255,0,200,'+ir+')');cg.addColorStop(.66,'rgba(255,210,0,'+ir+')');cg.addColorStop(1,'rgba(0,255,255,'+ir+')');c.strokeStyle=cg;}catch(x){c.strokeStyle='rgba(255,51,204,'+ir+')';}
-    c.lineWidth=2.5;c.beginPath();c.ellipse(P[0],P[1],rx,ry,0,0,6.2832);c.stroke();
-    c.fillStyle='rgba(255,255,255,'+(.8*ir)+')';c.fillRect(P[0]-rx*.35+age*3,P[1]-ry*.35,2,1);}
+  /* bord irrégulier, propre à chaque flaque : rayon modulé par trois harmoniques tirées de sa naissance */
+  var sd=q.t*977.13,h1=Math.sin(sd)*43758.5453%1,h2=Math.sin(sd*1.7)*12345.678%1,h3=Math.sin(sd*2.3)*9876.54%1;
+  c.save();c.beginPath();for(var k=0;k<=40;k++){var th=k/40*6.2832,m=1+.13*Math.sin(3*th+h1*6)+.08*Math.sin(5*th+h2*6)+.05*Math.sin(7*th+h3*6);var X=P[0]+Math.cos(th)*rx*m,Y=P[1]+Math.sin(th)*ry*m;if(k)c.lineTo(X,Y);else c.moveTo(X,Y);}c.closePath();
+  c.fillStyle='rgba(12,10,8,'+noir+')';c.fill();
+  /* film irisé diffus dans la flaque, plus marqué vers le bord, qui tourne lentement en séchant */
+  if(age<1.2){var ir=.5*(1-age/1.2*.4);c.clip();try{var cg=c.createConicGradient(h1*6+age*.8,P[0]+rx*.15,P[1]);cg.addColorStop(0,'rgba(40,190,200,'+ir+')');cg.addColorStop(.3,'rgba(150,60,170,'+ir+')');cg.addColorStop(.55,'rgba(200,160,40,'+ir*.8+')');cg.addColorStop(.8,'rgba(40,140,90,'+ir*.6+')');cg.addColorStop(1,'rgba(40,190,200,'+ir+')');c.fillStyle=cg;}catch(x){c.fillStyle='rgba(120,80,160,'+ir+')';}
+    c.globalCompositeOperation='source-atop';c.fillRect(P[0]-rx*1.4,P[1]-ry*1.6,rx*2.8,ry*3.2);
+    var rg=c.createRadialGradient(P[0]-rx*.1,P[1],0,P[0],P[1],rx);rg.addColorStop(0,'rgba(12,10,8,.75)');rg.addColorStop(.55,'rgba(12,10,8,.35)');rg.addColorStop(1,'rgba(12,10,8,0)');c.fillStyle=rg;c.fillRect(P[0]-rx*1.4,P[1]-ry*1.6,rx*2.8,ry*3.2);}
+  c.restore();c.save();
   var vn=Math.hypot(q.vx,q.vz)||1;for(var k=1;k<=3;k++){var D=ecran(q.x+q.vx/vn*s*(1+k*.55),q.z+q.vz/vn*s*(1+k*.55)),r=Math.max(.8,2.2-k*.45);c.fillStyle='rgba(10,10,12,'+(noir*(1-k*.2))+')';c.beginPath();c.ellipse(D[0],D[1],r*1.6,r*.8,0,0,6.2832);c.fill();}
   c.restore();}
 /* ---------- Poisoned Well ---------- */
@@ -46,7 +51,7 @@ function puits(c,px,pz,draw){var g=G(),e=g.e;
     P.on=true;P.x=e.puck_x;P.z=e.puck_z;P.vx=fvx;P.vz=e.puck_vz;P.t=e.t;P.n0=e.t+6;P.miel=null;}
   P.lastvz=e.puck_vz;
   /* l'ombre du vrai : 2 px vers la lampe, contraste sous 15 % */
-  var R=ecran(px,pz);c.save();c.fillStyle='rgba(0,0,0,.55)';c.beginPath();c.ellipse(R[0]-1,R[1]+2.5,11,3.4,0,0,6.2832);c.fill();c.restore();
+  var R=ecran(px,pz);c.save();c.fillStyle='rgba(28,18,12,.62)';c.beginPath();c.ellipse(R[0]-1,R[1]+2.5,11,3.4,0,0,6.2832);c.fill();c.restore();
   if(P.on){while(P.t<e.t){P.t++;if(P.t<P.n0){P.x=e.puck_x;P.z=e.puck_z;continue;}P.x+=P.vx;P.z+=P.vz;var s=e.p.puck_size,k=e.p.rail_keep;if(P.x<s-250){P.x=s-250;P.vx=-Math.trunc(P.vx*k/100);}if(P.x>250-s){P.x=250-s;P.vx=-Math.trunc(P.vx*k/100);}}
     var touche=P.z<e.pad_z+e.p.puck_size&&Math.abs(P.x-e.pad_x)<e.p.pad_size+e.p.puck_size;
     if(touche||P.z<0||e.crack_hold>0||e.puck_vz>=0){if(touche||P.z<0){P.miel={x:P.x,z:Math.max(0,P.z),t:g.t};aspire();}P.on=false;}
