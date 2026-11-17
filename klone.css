@@ -1,0 +1,20 @@
+@font-face{font-family:"VT";src:url(vt323.woff2) format("woff2");font-display:block}
+@font-face{font-family:"PS";src:url(ps2p.woff2) format("woff2");font-display:block}
+:root{--salle:#0b0908;--ambre:#ffa726;--phos:#ffe3a0;--rouge:#c9302a;--cyan:#4fc3f7;--vert:#66bb6a;--sourd:#5a4020}
+html,body{margin:0;height:100%;background:var(--salle);color:var(--ambre);overflow:hidden;-webkit-text-size-adjust:100%}
+body{font-family:"VT",monospace}
+pre{font-family:"VT",monospace;margin:0;line-height:1;white-space:pre;letter-spacing:0;user-select:text}
+pre span[data-a]{cursor:pointer}
+.balayage{position:fixed;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.14) 0 1px,transparent 1px 4px);z-index:9}
+@media (prefers-reduced-motion:reduce){.balayage{display:none}}
+/* Baku Boom : retour, toujours au même endroit, en bas à gauche */
+.boom{position:fixed;left:max(10px,env(safe-area-inset-left));bottom:max(10px,env(safe-area-inset-bottom));z-index:10;font:16px/1 "PS",monospace;color:var(--rouge);text-decoration:none;padding:14px;min-width:44px;min-height:44px;box-sizing:border-box;display:grid;place-items:center}
+.boom:hover,.boom:focus-visible{color:var(--phos);outline:none}
+.picto{font:16px/1 "PS",monospace;color:var(--ambre);background:none;border:0;padding:14px;min-width:44px;min-height:44px;cursor:pointer}
+.picto:hover,.picto:focus-visible{color:var(--phos);outline:none}
+.picto[aria-pressed=true]{color:var(--phos)}
+@font-face{font-family:"UN";src:url(unscii-8.woff) format("woff");font-display:block}
+.ansi{font-family:"UN",monospace;line-height:1;white-space:pre;margin:0;font-kerning:none;font-variant-ligatures:none;-webkit-font-smoothing:none;text-rendering:optimizeSpeed}
+.ansi{font-size:var(--c,8px)}
+.ansi>div{height:var(--c,8px);line-height:var(--c,8px);white-space:pre;overflow:hidden}
+.ansi>div>span{display:inline-block;height:100%;vertical-align:top}
