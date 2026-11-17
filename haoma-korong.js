@@ -33,7 +33,7 @@ function huile(c,q,age){var e=G().e,s=e.p.puck_size*2*(age<1.2?1:1-.3*(age-1.2)/
   var sd=q.t*977.13,h1=Math.sin(sd)*43758.5453%1,h2=Math.sin(sd*1.7)*12345.678%1,h3=Math.sin(sd*2.3)*9876.54%1;
   c.save();c.beginPath();for(var k=0;k<=40;k++){var th=k/40*6.2832,m=1+.13*Math.sin(3*th+h1*6)+.08*Math.sin(5*th+h2*6)+.05*Math.sin(7*th+h3*6);var X=P[0]+Math.cos(th)*rx*m,Y=P[1]+Math.sin(th)*ry*m;if(k)c.lineTo(X,Y);else c.moveTo(X,Y);}c.closePath();
   /* l'huile assombrit le bois sans le cacher : fond translucide en multiplication */
-  c.globalCompositeOperation='multiply';c.filter='blur(1.2px)';var mg=c.createRadialGradient(P[0],P[1],0,P[0],P[1],rx*1.1);mg.addColorStop(0,'rgba(70,56,44,'+(noir*.5)+')');mg.addColorStop(.7,'rgba(46,36,28,'+(noir*.78)+')');mg.addColorStop(1,'rgba(40,30,24,'+(noir*.85)+')');c.fillStyle=mg;c.fill();c.filter='none';
+  c.globalCompositeOperation='multiply';c.filter='blur(1.2px)';var mg=c.createRadialGradient(P[0],P[1],0,P[0],P[1],rx*1.1);mg.addColorStop(0,'rgba(92,76,62,'+(noir*.32)+')');mg.addColorStop(.7,'rgba(60,46,36,'+(noir*.55)+')');mg.addColorStop(1,'rgba(48,36,28,'+(noir*.68)+')');c.fillStyle=mg;c.fill();c.filter='none';
   c.globalCompositeOperation='source-over';
   /* irisation faible, au bord seulement, et un reflet rasant */
   if(age<1.2){var ir=.3*(1-age/1.2*.5);try{var cg=c.createConicGradient(h1*6+age*.8,P[0],P[1]);cg.addColorStop(0,'rgba(80,200,210,'+ir+')');cg.addColorStop(.35,'rgba(170,90,190,'+ir+')');cg.addColorStop(.65,'rgba(210,180,70,'+ir+')');cg.addColorStop(1,'rgba(80,200,210,'+ir+')');c.strokeStyle=cg;}catch(x){c.strokeStyle='rgba(170,90,190,'+ir+')';}
@@ -44,7 +44,6 @@ function huile(c,q,age){var e=G().e,s=e.p.puck_size*2*(age<1.2?1:1-.3*(age-1.2)/
     var rf=c.createLinearGradient(0,P[1]-ry*.7,0,P[1]+ry*.4);rf.addColorStop(0,'rgba(255,246,230,0)');rf.addColorStop(.5,'rgba(255,246,230,'+(ir*1.4)+')');rf.addColorStop(1,'rgba(255,246,230,0)');
     c.fillStyle=rf;c.beginPath();c.ellipse(P[0]-rx*.28,P[1]-ry*.1,Math.max(.9,rx*.07),ry*.55,0,0,6.2832);c.fill();}
   c.restore();c.save();
-  var vn=Math.hypot(q.vx,q.vz)||1;for(var k=1;k<=3;k++){var D=ecran(q.x+q.vx/vn*s*(1+k*.55),q.z+q.vz/vn*s*(1+k*.55)),r=Math.max(.8,2.2-k*.45);c.fillStyle='rgba(10,10,12,'+(noir*(1-k*.2))+')';c.beginPath();c.ellipse(D[0],D[1],r*1.6,r*.8,0,0,6.2832);c.fill();}
   c.restore();}
 /* ---------- Poisoned Well ---------- */
 var P={on:false,x:0,z:0,vx:0,vz:0,t:-1,lastvz:0,n0:0,miel:null};
