@@ -28,6 +28,7 @@ body{display:flex;flex-direction:column;align-items:center;justify-content:cente
 <a class="boom" href="./" aria-label="Baku Boom">&lt;&lt;</a>
 <div class="balayage"></div>
 <script src="masks.js"></script>
+<script src="haoma.js"></script>
 <script>
 (function(){
 'use strict';
@@ -43,7 +44,7 @@ function rendre(){
   var m=MASKS[ORDRE[n]],P=m.pal,o='';
   function c(k){var h=P[k]||'#0b0908';return mode?phos(h):h;}
   for(var y=0;y<m.g.length;y++){var G=m.g[y],F=m.f[y],B=m.b[y],run='',cf=null,cb=null;o+='<div>';
-    for(var x=0;x<G.length;x++){var f=c(F[x]),b=c(B[x]);
+    var th=performance.now(),hh2=window.HAOMA&&HAOMA.intensite();for(var x=0;x<G.length;x++){var f=c(F[x]),b=c(B[x]);if(hh2){f=HAOMA.ink(f,x,y,th);b=HAOMA.ink(b,x+1,y,th);}
       if(f!==cf||b!==cb){if(run)o+='<span style="color:'+cf+';background:'+cb+'">'+esc(run)+'</span>';run='';cf=f;cb=b;}run+=G[x];}
     o+='<span style="color:'+cf+';background:'+cb+'">'+esc(run)+'</span></div>';}
   pre.innerHTML=o;
@@ -74,6 +75,7 @@ addEventListener('touchend',function(e){if(sx===null)return;var d=e.changedTouch
 addEventListener('keydown',function(e){if(e.key==='ArrowLeft')va(-1);if(e.key==='ArrowRight')va(1);if(e.key==='Escape')location.href='./';});
 addEventListener('resize',fit);
 document.fonts.load('8px UN').then(function(){pre.classList.add('ouvre');rendre();});
+setInterval(function(){if(window.HAOMA&&HAOMA.intensite()){rendre();HAOMA.respire(pre,performance.now());}},150);
 })();
 </script>
 </body>

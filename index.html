@@ -18,6 +18,7 @@ body{display:grid;place-items:center}
 <div class="balayage"></div>
 <script src="minis.js"></script>
 <script src="son.js"></script>
+<script src="haoma.js"></script>
 <script>
 (function(){
 'use strict';
@@ -223,7 +224,7 @@ var t0=0;
 function ouverture(t){var p=(t-t0)/1100;if(p>=1)return;for(var y=0;y<PH;y++){var d=y/PH;if(d>p)for(var x=0;x<PW;x++)px[y*PW+x]=(d<p+.04&&bay(x,y)<.5)?'#3a2008':SALLE;}}
 /* ===== Boucle ===== */
 var der=0;
-function dessine(t){meuble();var sc=ecran(t);enseigne(t);panneau(t);fente(t);if(!reduit)ouverture(t);encode();return sc;}
+function dessine(t){meuble();var sc=ecran(t);enseigne(t);panneau(t);fente(t);if(!reduit)ouverture(t);if(window.HAOMA)HAOMA.lens(px,txt,PW,PH,t);encode();return sc;}
 var reduit=matchMedia('(prefers-reduced-motion:reduce)').matches;
 function boucle(){dessine(performance.now());setTimeout(boucle,70);}
 /* ===== Taille : la borne entière, un nombre entier de pixels physiques par case ===== */
@@ -231,7 +232,8 @@ function fit(){var d=devicePixelRatio||1,c=Math.max(3,Math.floor(Math.min(innerW
 /* ===== Gestes ===== */
 function pxDe(e){var r=el.getBoundingClientRect();return {x:Math.floor((e.clientX-r.left)/r.width*PW),y:Math.floor((e.clientY-r.top)/r.height*PH)};}
 function va(h){if(!h)return;if(window.SON){SON.joue('press');}etat='depart';setTimeout(function(){location.href=h;},260);}
-function koin(){if(window.SON){SON.joue('coin');setTimeout(function(){SON.joue('drop',.7);},650);}koins=Math.min(99,koins+1);try{localStorage.setItem('klone:koins',koins);}catch(e){}tKoin=performance.now();setTimeout(function(){etat='credit';},700);}
+var neuf=[];
+function koin(){neuf.push(Date.now());neuf=neuf.filter(function(d){return Date.now()-d<9000;});if(neuf.length>=9&&window.HAOMA){HAOMA.dose();neuf=[];}if(window.SON){SON.joue('coin');setTimeout(function(){SON.joue('drop',.7);},650);}koins=Math.min(99,koins+1);try{localStorage.setItem('klone:koins',koins);}catch(e){}tKoin=performance.now();setTimeout(function(){etat='credit';},700);}
 function cible(p){
   if(p.x>=54&&p.x<=105&&p.y>=143&&p.y<=178)return 'fente';
   if(p.y>=110&&p.y<=134){for(var i=0;i<4;i++)if(Math.abs(p.x-KEYS[i].x)<=11&&KEYS[i].href)return 'k'+i;}
